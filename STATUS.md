@@ -29,6 +29,12 @@ Current version: 0.1.0a6, experimental. Not a complete login-only application.
   account-password derivation with explicitly injected private parameters.
 - Lab web/poller API entry points and adapter constructor run with legacy SDK
   imports blocked. API wire signing no longer calls obsolete SDK header builders.
+- Backup and restore on a private snapshot of the actual lab database preserved
+  trip/charge/settings contents, position count/latest time, schema and integrity.
+  The restored cached session was reused without cloud login; a different account
+  could not reuse it. Temporary copies were removed after the check.
+- The previous adapter and web entry point passed all 42 lab tests against the
+  current package in a network-disabled rollback container.
 
 ## Integration evidence, not generic support claims
 
@@ -47,9 +53,13 @@ Current version: 0.1.0a6, experimental. Not a complete login-only application.
 - Legitimate automated application credential provisioning for fresh installs.
 - Validate issuer-side revocation/recovery in a supervised environment. Automatic
   retirement is not enabled while live processes can retain certificate paths.
-- Test new install, backup/restore, account switch and rollback end to end.
+- Complete fresh-install cloud onboarding once legitimate provisioning exists.
+  Local backup/restore, account-cache isolation and offline rollback are checked;
+  a live login/account-switch sequence is not substituted with synthetic proof.
 - Complete physical tests with a supervising user, including sleeping vehicles.
 - Obtain per-model/trim evidence before enabling models beyond B10.
 
 Historical GPS routes and MQTT are not advertised as supported. Synthetic tests
 on different model names are not hardware compatibility validation.
+
+See FINAL_QUALIFICATION.md for the exact closed checks and external blockers.
