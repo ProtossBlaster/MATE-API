@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mate-api"
+version = "0.1.0a3"
+description = "Unofficial experimental Leapmotor cloud protocol core and B10 command contracts"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = ["Development Status :: 2 - Pre-Alpha"]
+
+[project.optional-dependencies]
+certificates = ["cryptography>=42"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["leapmotor_cloud*"]

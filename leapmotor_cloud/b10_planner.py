@@ -1,0 +1,49 @@
+"""Offline command planner. No sender, PIN material or execution authority."""
+from dataclasses import dataclass
+from datetime import timedelta
+from .b10_payloads import prepare_b10, B10Payload
+from .capabilities import evaluate
+from .errors import ValidationError
+from .models import Availability as A, CapabilitySnapshot, Decision, require_aware
+from .operating_availability import OperatingState, front_seat_ventilation_availability
+
+
+@dataclass(frozen=True)
+class B10Plan:
+    decision: Decision
+    payload: B10Payload | None
+    requires_physical_confirmation: bool = True
+
+
+def plan_b10(snapshot, state, *, action, now, capability_max_age,
+             state_max_age, value=None, position=None, rudder=None):
+    if not isinstance(snapshot, CapabilitySnapshot) or not isinstance(state, OperatingState):
+        raise ValidationError('Expected capability and operating snapshots')
+    require_aware(now)
+    if state.vin != snapshot.vehicle.vin:
+        raise ValidationError('Vehicle identity mismatch')
+    if not isinstance(state_max_age, timedelta) or state_max_age <= timedelta(0):
+        raise ValidationError('Positive state freshness limit required')
+    if snapshot.vehicle.model != 'B10':
+        return B10Plan(Decision(A.UNKNOWN,'model_contract_unverified'),None)
+    requirements = {'doors':(10,110),'trunk':(3,130),'windows':(12,230),
+                    'climate':(6,170),'seat_heat':(21,301),'wheel_heat':(15,320)}
+    if action=='seat_ventilation':
+        decision=front_seat_ventilation_availability(snapshot,state,position=position,
+            rudder=rudder,now=now,capability_max_age=capability_max_age,state_max_age=state_max_age)
+    elif action in requirements:
+        ability,right=requirements[action]
+        decision=evaluate(snapshot,ability=ability,right=right,now=now,max_age=capability_max_age)
+    else:
+        return B10Plan(Decision(A.UNKNOWN,'command_contract_unverified'),None)
+    if decision.state is not A.AVAILABLE:
+        return B10Plan(decision,None)
+    # A stricter local pilot policy, not a claim that the app blocks every action.
+    if state.observed_at is None or not timedelta(0) <= now-state.observed_at <= state_max_age:
+        return B10Plan(Decision(A.UNKNOWN,'state_not_fresh'),None)
+    if state.driving is None or state.on3 is None:
+        return B10Plan(Decision(A.UNKNOWN,'operating_state_incomplete'),None)
+    if state.driving or state.on3:
+        return B10Plan(Decision(A.TEMPORARILY_UNAVAILABLE,'pilot_requires_stationary_on3_off'),None)
+    payload=prepare_b10(action,model='B10',value=value,position=position)
+    return B10Plan(Decision(A.AVAILABLE,'offline_plan_only_not_execution_permit'),payload)

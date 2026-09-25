@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.db
+*.sqlite*
+*.log
+/data/
