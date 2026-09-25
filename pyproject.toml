@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mate-api"
-version = "0.1.0a4"
+version = "0.1.0a5"
 description = "Unofficial experimental Leapmotor cloud protocol core and B10 command contracts"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -6,6 +6,26 @@ from .errors import ValidationError
 from .models import Availability as A, CapabilitySnapshot, Decision, require_aware
 
 
+def permission_decision(*, model, owner, ability_supported, right_allowed,
+                        module_allowed, rights_present=True, module_rights_present=True):
+    """Owner must originate from an authenticated binding, never guessed."""
+    if owner is not None and type(owner) is not bool:
+        raise ValidationError('Invalid ownership flag')
+    if any(type(x) is not bool for x in (ability_supported,right_allowed,module_allowed,
+                                        rights_present,module_rights_present)):
+        raise ValidationError('Explicit permission flags required')
+    if not ability_supported:return Decision(A.UNSUPPORTED,'ability_absent')
+    if owner is None:return Decision(A.UNKNOWN,'ownership_unknown')
+    owner_omission=owner and model=='B10'
+    if not module_rights_present:
+        if not owner_omission:return Decision(A.FORBIDDEN,'control_module_missing')
+    elif not module_allowed:return Decision(A.FORBIDDEN,'control_module_denied')
+    if not rights_present:
+        if not owner_omission:return Decision(A.FORBIDDEN,'account_right_missing')
+    elif not right_allowed:return Decision(A.FORBIDDEN,'account_right_denied')
+    return Decision(A.AVAILABLE,'explicit_ability_and_permission')
+
+
 def evaluate(snapshot: CapabilitySnapshot, *, ability: int, right: int,
              now: datetime, max_age: timedelta) -> Decision:
     if not isinstance(snapshot, CapabilitySnapshot):
@@ -22,19 +42,7 @@ def evaluate(snapshot: CapabilitySnapshot, *, ability: int, right: int,
         return Decision(A.UNKNOWN, "snapshot_expired")
     if not snapshot.complete:
         return Decision(A.UNKNOWN, "snapshot_incomplete")
-    if ability not in snapshot.abilities:
-        return Decision(A.UNSUPPORTED, "ability_absent")
-    if snapshot.owner is None:
-        return Decision(A.UNKNOWN, "ownership_unknown")
-    if snapshot.owner:
-        if right not in snapshot.rights:
-            return Decision(A.UNKNOWN, "owner_rule_not_reconstructed")
-        if 200 not in snapshot.module_rights:
-            return Decision(A.UNKNOWN, "owner_module_rule_not_reconstructed")
-    else:
-        if 200 not in snapshot.module_rights:
-            return Decision(A.FORBIDDEN, "control_module_denied")
-        if right not in snapshot.rights:
-            return Decision(A.FORBIDDEN, "account_right_denied")
-    return Decision(A.AVAILABLE, "explicit_ability_and_permission")
-
+    return permission_decision(model=snapshot.vehicle.model,owner=snapshot.owner,
+        ability_supported=ability in snapshot.abilities,right_allowed=right in snapshot.rights,
+        module_allowed=200 in snapshot.module_rights,rights_present=snapshot.rights_present,
+        module_rights_present=snapshot.module_rights_present)

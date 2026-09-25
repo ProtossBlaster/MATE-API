@@ -1,6 +1,6 @@
 # Implementation and release gates
 
-Current version: 0.1.0a4, experimental. Not a complete login-only application.
+Current version: 0.1.0a5, experimental. Not a complete login-only application.
 
 ## Implemented and tested offline
 
@@ -15,6 +15,16 @@ Current version: 0.1.0a4, experimental. Not a complete login-only application.
   ambiguous wall times are rejected instead of silently shifted.
 - Planner capability IDs derive from the command contracts (one source).
 - Lab login delegates to LoginClient under its existing process lock/cooldown.
+- Shared permission rules distinguish omitted owner permissions from explicit
+  denial; shared accounts do not receive the owner exception.
+- Shared operating policy defaults to fresh state. The lab explicitly opts into
+  last-known parked state; neither mode proves physical execution.
+- Vehicle timestamp and cloud collection timestamp remain distinct.
+- HTTP 401 invalidates only the rejected session, never a newer replacement;
+  HTTP 403 does not trigger session invalidation. No request is replayed.
+- Explicit certificate invalidation and quiescent-generation retirement helpers.
+- Synthetic fresh-cache, backup/restore, account isolation and legacy-schema
+  readability checks. These do not replace end-to-end fresh cloud provisioning.
 
 ## Integration evidence, not generic support claims
 
@@ -28,8 +38,8 @@ Current version: 0.1.0a4, experimental. Not a complete login-only application.
 
 - Legitimate automated application credential provisioning for fresh installs.
 - Remove residual legacy DTO/password-resolution dependencies.
-- Unify the generic planner and lab command permission/freshness policies.
-- Validate revoked-session/certificate recovery and retired-material cleanup.
+- Validate issuer-side revocation/recovery in a supervised environment. Automatic
+  retirement is not enabled while live processes can retain certificate paths.
 - Test new install, backup/restore, account switch and rollback end to end.
 - Complete physical tests with a supervising user, including sleeping vehicles.
 - Obtain per-model/trim evidence before enabling models beyond B10.

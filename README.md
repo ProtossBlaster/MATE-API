@@ -1,6 +1,6 @@
 # MATE-API (experimental)
 
-Unofficial Python protocol package for Leapmotor. Distribution version `0.1.0a3`.
+Unofficial Python protocol package for Leapmotor. Distribution version `0.1.0a5`.
 This is not an official Leapmotor SDK and is not ready for a production release.
 No certificate, private key, account, vehicle identifier or location fixture is
 provided. Publishing this package does not provision application credentials.
@@ -18,11 +18,10 @@ certificate lifecycle primitives and explicit B10 command execution primitives.
 permission or physical execution. Sentinel 220/400 is not enabled. ID 193 is
 not authorized on the shared B10 account examined in the lab.
 
-The separate 4001 `api_v2_bridge` still uses legacy local vehicle DTOs, PIN
-cryptography and account-certificate decoding. Those dependencies have NOT yet
-been eliminated. Its coordinated login/database implementation is not part of
-this standalone package. Do not confuse extraction of validators with complete
-migration of authentication or replacement of every Mate integration.
+The separate 4001 `api_v2_bridge` still uses legacy local vehicle DTOs, command
+convenience methods and the PKCS12 password resolver. Login, PIN protection and
+account-certificate decoding use this package. The cross-process coordinator
+and database integration remain in the lab, not this standalone distribution.
 
 ## Installation and tests
 
@@ -58,9 +57,13 @@ The raw binding includes `vin`, `carType`, `rightList`, `moduleRights` and
 resolved from declared capabilities; explicitly empty permission lists remain
 a denial. Shared vehicles require explicit permission/module rights.
 
-The generic conservative `capabilities.evaluate` and older `b10_planner` remain
-separate APIs; they do not automatically inherit the lab's newer owner and
-sleeping-vehicle policies. Unifying these APIs is a release blocker.
+The planner and contracts share permission rules. CapabilitySnapshot carries
+explicit rights_present/module_rights_present flags: an empty supplied list is
+not an omitted field. Only an authenticated B10 owner binding may use the
+omission exception. Operating policy is shared, with allow_stale_parked=False
+by default; the lab explicitly opts in. Last-known parked state is not proof of
+the current vehicle state. Planner payload coverage remains deliberately smaller
+than the full contracts and does not authorize untested physical combinations.
 
 ## Safety and compatibility
 
@@ -72,8 +75,8 @@ sleeping-vehicle policies. Unifying these APIs is a release blocker.
   commands, retaining the last-known speed/ON3 gates. Physical sleeping-car
   tests remain outstanding.
 - B10 is the only model enabled by the migrated command adapter.
-- Scheduled command date validation currently assumes Europe/Rome. This is a
-  lab limitation, not global timezone support.
+- Scheduled commands require an explicit IANA timezone. DST gaps and ambiguous
+  wall times are rejected. The lab supplies its configured TZ.
 - Imported cloud trip summaries do not include a verified historical GPS track.
 - Charge history was available to the owner but not the shared account in the
   observed case; this is not a universal claim about every account or model.
@@ -91,9 +94,8 @@ application certificate required for initial login. A new-install login-only
 wizard still needs a legitimate distribution-side provisioning mechanism.
 Existing installations can reuse valid application material.
 
-Before a public release: complete independent authentication/PIN/DTO support,
-unify command APIs and policies, settle application provisioning, choose a
-license after reviewing reused code, validate account switching/revocation,
+Before a stable release: complete independent DTO/password-resolution support,
+settle application provisioning, validate real revocation recovery,
 complete physical trials, and document a tested installation/rollback matrix.
 This repository publishes experimental source only; no stable release is claimed.
 
@@ -111,10 +113,9 @@ provider, and expiry is checked again afterwards. Requests are single-attempt,
 errors omit remote response bodies/secrets, and one instance rate-limits login
 attempts to one per minute. Cross-process coordination remains the caller's job.
 
-This primitive is verified with synthetic offline transport, not yet substituted
-for the coordinated login running on 4001. PKCS12 password resolution/provisioning
-and PIN encryption remain explicit integration work; the module must not be
-presented as a complete fresh-install or certificate-free solution.
+The 4001 coordinator now delegates to this primitive under its process lock.
+PKCS12 password resolution and application provisioning remain explicit
+integration dependencies; this is not a certificate-free solution.
 
 ## PIN and account material (0.1.0a3)
 
@@ -132,7 +133,23 @@ The lab uses this provider instead of the old SDK's decoding/file writer.
 The password-candidate resolver in the lab still uses compatibility helpers
 from the old SDK. Therefore password derivation/fallback removal and vehicle DTO
 replacement remain incomplete; do not advertise the whole lab adapter as SDK-free.
-The standalone LoginClient is still not the coordinator used by the live lab.
+The standalone LoginClient is called by, rather than replacing, the lab's
+cross-process coordinator.
+
+## Recovery and material retirement (0.1.0a5)
+
+CloudReadClient invalidates a rejected session on HTTP 401 without replaying the
+request. A late response cannot invalidate a newer session. HTTP 403 preserves
+the session; proprietary API codes are not guessed to mean revocation.
+AccountCertificateManager.invalidate rejects fallback to an explicitly rejected
+lease. This requires caller-supplied revocation evidence, not a local CRL claim.
+
+material_cleanup.retire_generations requires an explicit retired-generation
+manifest, active paths and quiescent=True. Stop all readers before using it.
+It refuses active generations, symlinks, hard links, unexpected files and paths
+outside the private root. It is not scheduled automatically in the live lab.
+Telemetry observed_at now refers only to vehicle signal 1; cloud_collected_at
+is separate and cannot turn an old vehicle frame into a fresh one.
 
 ## Public project
 

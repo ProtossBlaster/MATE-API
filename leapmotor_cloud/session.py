@@ -102,3 +102,11 @@ class SessionStore:
                 raise AuthenticationRequired()
             self._session.ensure_valid(now)
             return self._session
+
+    def invalidate(self, expected):
+        """A late rejection of an old request cannot erase its replacement."""
+        if not isinstance(expected,CloudSession):raise ValidationError('Expected CloudSession')
+        with self._lock:
+            if self._session is not expected:return False
+            self._session=None
+            return True

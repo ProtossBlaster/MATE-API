@@ -30,6 +30,8 @@ def _time(value):
     # Only observed epoch milliseconds or explicitly timezone-aware ISO dates.
     # Other encodings remain available in raw data, never replaced by receipt time.
     try:
+        if isinstance(value,str) and value.isascii() and value.isdecimal() and len(value)<=16:
+            value=int(value)
         if type(value) in (int, float) and math.isfinite(value) and value > 0:
             return datetime.fromtimestamp(value / 1000, timezone.utc)
         if isinstance(value, str) and value:
@@ -76,6 +78,7 @@ class TelemetrySnapshot:
     values: Mapping
     unknown_signals: Mapping = field(repr=False)
     source: str = 'signalMap'
+    cloud_collected_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,11 +114,9 @@ def normalize_telemetry(response, *, expected_vin, received_at):
     values = {label: _number(signals.get(code), low, high)
               for code, (label, low, high) in SIGNALS.items()}
     unknown = {k: v for k, v in raw['signalMap'].items() if k not in SIGNALS}
-    observed = _time(data.get('collectTime'))
-    if observed is None:
-        observed = _time(signals.get('1'))
+    observed = _time(signals.get('1'))
     return TelemetrySnapshot(expected_vin, received_at, observed, raw,
-                             _freeze(values), _freeze(unknown))
+                             _freeze(values), _freeze(unknown),cloud_collected_at=_time(data.get('collectTime')))
 
 
 def normalize_configuration(response, *, expected_vin, received_at):

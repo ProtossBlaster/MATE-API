@@ -8,6 +8,8 @@ import re
 from datetime import datetime, timezone
 from .scheduling import local_start
 from .models import require_aware
+from .models import Availability
+from .capabilities import permission_decision
 from .errors import ValidationError as CommandContractError
 
 APPOINTMENT_PATH='/carownerservice/v3/api/appremotectl/oversea/appointment'
@@ -41,15 +43,20 @@ def require(vehicle,cmd,ability=None):
            and str(raw_vehicle.get('carType','')).upper()=='B10')
     right_allowed=(owner and raw_vehicle.get('rightList') is None) or vehicle.has_right(right)
     module_allowed=(owner and raw_vehicle.get('moduleRights') is None) or vehicle.has_module_right(200)
-    if not right_allowed or not module_allowed:
-        fail('vehicle permission missing for '+cmd)
     ability=default if ability is None else ability
     raw=raw_vehicle.get('abilities')
     if isinstance(raw,list):
-        try:supported=ability in {int(v) for v in raw if type(v)is not bool}
+        try:
+            if any(not (type(v) is int and v>0 or isinstance(v,str) and v.isascii() and v.isdecimal() and int(v)>0) for v in raw):
+                raise ValueError()
+            supported=ability in {int(v) for v in raw}
         except (ValueError,TypeError):supported=False
     else:supported=vehicle.has_ability(ability)
-    if not supported:fail('vehicle capability missing for '+cmd)
+    decision=permission_decision(model='B10',owner=bool(owner),ability_supported=bool(supported),
+        right_allowed=bool(right_allowed),module_allowed=bool(module_allowed),
+        rights_present=not(owner and raw_vehicle.get('rightList') is None),
+        module_rights_present=not(owner and raw_vehicle.get('moduleRights') is None))
+    if decision.state is not Availability.AVAILABLE:fail(decision.reason+' for '+cmd)
 
 
 def finite(value,low,high):
@@ -188,6 +195,7 @@ def prepare(cmd,state,vehicle,*,timezone_name=None,now=None):
     if not isinstance(state,dict):fail('payload must be an object')
     ability=None
     if cmd=='370':
+        if getattr(vehicle,'rudder','left') not in ('left','right'):fail('unknown driving side')
         physical=seat_position(state.get('position'),vehicle)
         driver=(physical=='left_front')==(getattr(vehicle,'rudder','left')=='left')
         ability=42 if driver else 43

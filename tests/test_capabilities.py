@@ -23,7 +23,7 @@ class CapabilityTests(unittest.TestCase):
                  (False, True, False, True, "unsupported"),
                  (True, False, False, True, "forbidden"),
                  (False, False, False, False, "unknown"),
-                 (True, False, True, True, "unknown")]
+                 (True, False, True, True, "forbidden")]
         for model in ("B10", "C03", "UNRECOGNIZED"):
             for ability, right, owner, complete, expected in cases:
                 with self.subTest(model=model, expected=expected, owner=owner):
@@ -37,12 +37,12 @@ class CapabilityTests(unittest.TestCase):
     def test_shared_control_module_denied(self):
         self.assertEqual(self.decision(snapshot(module_rights=frozenset())).reason, "control_module_denied")
 
-    def test_owner_missing_right_is_unknown_not_denied(self):
+    def test_owner_explicit_empty_right_is_denied(self):
         self.assertEqual(self.decision(snapshot(owner=True, rights=frozenset())).reason,
-                         "owner_rule_not_reconstructed")
+                         "account_right_denied")
 
-    def test_owner_missing_module_is_unknown(self):
-        self.assertEqual(self.decision(snapshot(owner=True, module_rights=frozenset())).state.value, "unknown")
+    def test_owner_explicit_empty_module_is_denied(self):
+        self.assertEqual(self.decision(snapshot(owner=True, module_rights=frozenset())).state.value, "forbidden")
 
     def test_owner_explicit_permissions(self):
         self.assertEqual(self.decision(snapshot(owner=True)).state.value, "available")
@@ -102,4 +102,3 @@ class CapabilityTests(unittest.TestCase):
         for ability, right in ((True, 370), (42, True), (0, 370), (42, "370")):
             with self.assertRaises(ValidationError):
                 evaluate(snapshot(), ability=ability, right=right, now=NOW, max_age=AGE)
-

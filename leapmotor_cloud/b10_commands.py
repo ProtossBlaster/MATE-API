@@ -70,13 +70,14 @@ class B10CommandClient:
         self.clock, self.nonce, self.encrypt = clock, nonce_factory, pin_encryptor
 
     def execute(self, snapshot, state, *, action, pin, capability_max_age,
-                state_max_age, value=None, position=None, rudder=None, authorized=False):
+                state_max_age, value=None, position=None, rudder=None, authorized=False,
+                allow_stale_parked=False):
         if authorized is not True:
             raise ValidationError('Explicit command authorization required')
         now = self.clock()
         plan = plan_b10(snapshot, state, action=action, now=now,
                         capability_max_age=capability_max_age, state_max_age=state_max_age,
-                        value=value, position=position, rudder=rudder)
+                        value=value, position=position, rudder=rudder,allow_stale_parked=allow_stale_parked)
         if plan.decision.state is not Availability.AVAILABLE or plan.payload is None:
             raise ValidationError('Command unavailable under current capability/state policy')
         if not isinstance(pin, str) or not pin.isascii() or not pin.isdecimal() or not 1 <= len(pin) <= 32:

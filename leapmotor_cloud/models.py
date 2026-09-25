@@ -38,6 +38,8 @@ class CapabilitySnapshot:
     owner: bool | None
     complete: bool
     observed_at: datetime
+    rights_present: bool = True
+    module_rights_present: bool = True
 
     def __post_init__(self):
         if not isinstance(self.vehicle, VehicleIdentity):
@@ -48,6 +50,10 @@ class CapabilitySnapshot:
         if (self.owner is not None and type(self.owner) is not bool) or type(self.complete) is not bool:
             raise ValidationError("Invalid snapshot flags")
         require_aware(self.observed_at)
+        if type(self.rights_present) is not bool or type(self.module_rights_present) is not bool:
+            raise ValidationError("Permission presence must be explicit booleans")
+        if (not self.rights_present and self.rights) or (not self.module_rights_present and self.module_rights):
+            raise ValidationError("Absent permission fields cannot contain values")
 
 
 class Availability(str, Enum):
@@ -62,4 +68,3 @@ class Availability(str, Enum):
 class Decision:
     state: Availability
     reason: str
-

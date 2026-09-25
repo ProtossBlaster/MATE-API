@@ -5,7 +5,7 @@ from .b10_payloads import prepare_b10, B10Payload
 from .capabilities import evaluate
 from .errors import ValidationError
 from .models import Availability as A, CapabilitySnapshot, Decision, require_aware
-from .operating_availability import OperatingState, front_seat_ventilation_availability
+from .operating_availability import OperatingState, front_seat_ventilation_availability, operating_decision
 from .command_contracts import COMMAND_RULES
 
 
@@ -17,7 +17,7 @@ class B10Plan:
 
 
 def plan_b10(snapshot, state, *, action, now, capability_max_age,
-             state_max_age, value=None, position=None, rudder=None):
+             state_max_age, value=None, position=None, rudder=None, allow_stale_parked=False):
     if not isinstance(snapshot, CapabilitySnapshot) or not isinstance(state, OperatingState):
         raise ValidationError('Expected capability and operating snapshots')
     require_aware(now)
@@ -31,7 +31,8 @@ def plan_b10(snapshot, state, *, action, now, capability_max_age,
                 'climate':'170','seat_heat':'301','wheel_heat':'320'}
     if action=='seat_ventilation':
         decision=front_seat_ventilation_availability(snapshot,state,position=position,
-            rudder=rudder,now=now,capability_max_age=capability_max_age,state_max_age=state_max_age)
+            rudder=rudder,now=now,capability_max_age=capability_max_age,state_max_age=state_max_age,
+            allow_stale_parked=allow_stale_parked)
     elif action in commands:
         right,ability=COMMAND_RULES[commands[action]]
         decision=evaluate(snapshot,ability=ability,right=right,now=now,max_age=capability_max_age)
@@ -39,12 +40,8 @@ def plan_b10(snapshot, state, *, action, now, capability_max_age,
         return B10Plan(Decision(A.UNKNOWN,'command_contract_unverified'),None)
     if decision.state is not A.AVAILABLE:
         return B10Plan(decision,None)
-    # A stricter local pilot policy, not a claim that the app blocks every action.
-    if state.observed_at is None or not timedelta(0) <= now-state.observed_at <= state_max_age:
-        return B10Plan(Decision(A.UNKNOWN,'state_not_fresh'),None)
-    if state.driving is None or state.on3 is None:
-        return B10Plan(Decision(A.UNKNOWN,'operating_state_incomplete'),None)
-    if state.driving or state.on3:
-        return B10Plan(Decision(A.TEMPORARILY_UNAVAILABLE,'pilot_requires_stationary_on3_off'),None)
+    operating=operating_decision(state,now=now,state_max_age=state_max_age,
+                                 allow_stale_parked=allow_stale_parked)
+    if operating.state is not A.AVAILABLE:return B10Plan(operating,None)
     payload=prepare_b10(action,model='B10',value=value,position=position)
-    return B10Plan(Decision(A.AVAILABLE,'offline_plan_only_not_execution_permit'),payload)
+    return B10Plan(operating,payload)

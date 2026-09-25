@@ -124,6 +124,7 @@ class CloudReadClient:
         if not isinstance(response, Response):
             raise ProtocolError("invalid_transport_response")
         if response.status in (401, 403):
+            if response.status==401:self._sessions.invalidate(session)
             raise AuthenticationRequired()
         if not 200 <= response.status < 300:
             raise TransportError("http_status")

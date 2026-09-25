@@ -131,6 +131,18 @@ class AccountCertificateManager:
                 shutil.rmtree(self._root)
                 self._closed = True
 
+    def invalidate(self, expected):
+        """Invalidate an explicitly rejected lease, retaining files for readers.
+
+        Caller must supply issuer-confirmed evidence. Local expiry checks alone
+        cannot discover revocation. Replacement requires a provider call.
+        """
+        with self._lock:
+            if self._closed or self._current is not expected:return False
+            self._current=None
+            self._retry_at=None
+            return True
+
     def __enter__(self):
         return self
 
