@@ -1,6 +1,6 @@
 # MATE-API (experimental)
 
-Unofficial Python protocol package for Leapmotor. Distribution version `0.1.0a5`.
+Unofficial Python protocol package for Leapmotor. Distribution version `0.1.0a6`.
 This is not an official Leapmotor SDK and is not ready for a production release.
 No certificate, private key, account, vehicle identifier or location fixture is
 provided. Publishing this package does not provision application credentials.
@@ -18,10 +18,11 @@ certificate lifecycle primitives and explicit B10 command execution primitives.
 permission or physical execution. Sentinel 220/400 is not enabled. ID 193 is
 not authorized on the shared B10 account examined in the lab.
 
-The separate 4001 `api_v2_bridge` still uses legacy local vehicle DTOs, command
-convenience methods and the PKCS12 password resolver. Login, PIN protection and
-account-certificate decoding use this package. The cross-process coordinator
-and database integration remain in the lab, not this standalone distribution.
+The separate 4001 `api_v2_bridge` uses this package for vehicle DTOs, migrated
+command convenience methods, PKCS12 password derivation, login, PIN protection
+and account-certificate decoding. The cross-process coordinator and database
+integration remain in the lab, not this standalone distribution. Optional Mate
+image/diagnostic helpers outside the API path are not part of this replacement.
 
 ## Installation and tests
 
@@ -94,8 +95,7 @@ application certificate required for initial login. A new-install login-only
 wizard still needs a legitimate distribution-side provisioning mechanism.
 Existing installations can reuse valid application material.
 
-Before a stable release: complete independent DTO/password-resolution support,
-settle application provisioning, validate real revocation recovery,
+Before a stable release: settle application provisioning, validate real revocation recovery,
 complete physical trials, and document a tested installation/rollback matrix.
 This repository publishes experimental source only; no stable release is claimed.
 
@@ -130,11 +130,33 @@ private generation (directory 0700, files 0600). Failure never removes a prior
 generation. Retired generations require explicit coordinated garbage collection.
 The lab uses this provider instead of the old SDK's decoding/file writer.
 
-The password-candidate resolver in the lab still uses compatibility helpers
-from the old SDK. Therefore password derivation/fallback removal and vehicle DTO
-replacement remain incomplete; do not advertise the whole lab adapter as SDK-free.
+Since 0.1.0a6 the lab uses independent password derivation and vehicle models.
+Application-specific parameters and optional password candidates are private
+configuration supplied by the installation, not constants shipped by this repo.
 The standalone LoginClient is called by, rather than replacing, the lab's
 cross-process coordinator.
+
+## Independent Mate interface (0.1.0a6)
+
+mate_compat.MateClientCompatibility is a narrow adapter superclass, not a full
+replacement for every historical SDK method. It never sends HTTP itself. Its
+reads and command methods delegate to the coordinated adapter, which validates
+permissions, payloads, TLS and signing. Unknown commands fail closed.
+get_vehicle_status returns this package's TelemetrySnapshot, not a legacy
+VehicleStatus. The Mate poller uses get_vehicle_raw_status.
+
+Vehicle.from_dict handles comma-separated permission lists and preserves unknown
+capability IDs and raw model metadata. It does not infer battery capacity or
+hardware support from a model name. The lab's UI uses the same vehicle parser.
+
+AccountPasswordResolver implements the reconstructed derivation using injected
+SM4 round parameters and substitution table. Neither those application parameters
+nor private fallback passwords are included. The existing lab migrated them into
+private local storage once; subsequent client execution does not import the SDK.
+Twelve synthetic input pairs matched the old derivation. This establishes local
+algorithm parity, not a new issuer authorization or certificate-free bootstrap.
+
+See [MIGRATION.md](MIGRATION.md) for rollout and rollback boundaries.
 
 ## Recovery and material retirement (0.1.0a5)
 

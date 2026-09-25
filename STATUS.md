@@ -1,6 +1,6 @@
 # Implementation and release gates
 
-Current version: 0.1.0a5, experimental. Not a complete login-only application.
+Current version: 0.1.0a6, experimental. Not a complete login-only application.
 
 ## Implemented and tested offline
 
@@ -25,6 +25,10 @@ Current version: 0.1.0a5, experimental. Not a complete login-only application.
 - Explicit certificate invalidation and quiescent-generation retirement helpers.
 - Synthetic fresh-cache, backup/restore, account isolation and legacy-schema
   readability checks. These do not replace end-to-end fresh cloud provisioning.
+- Independent Mate vehicle model, migrated command convenience methods and
+  account-password derivation with explicitly injected private parameters.
+- Lab web/poller API entry points and adapter constructor run with legacy SDK
+  imports blocked. API wire signing no longer calls obsolete SDK header builders.
 
 ## Integration evidence, not generic support claims
 
@@ -32,12 +36,15 @@ Current version: 0.1.0a5, experimental. Not a complete login-only application.
   owner-account charge history. A shared account did not expose that charge history.
 - Several B10 commands have user-confirmed physical trials. Not every command or
   sleeping-vehicle condition is validated.
-- The Mate integration still has legacy DTO/password-resolution dependencies.
+- The lab API adapter no longer inherits the old SDK or uses its DTOs/password
+  resolver. Existing application parameters were migrated locally into private
+  storage, not published. This is not a fresh-install provisioning solution.
+- Optional surrounding Mate image/diagnostic helpers are outside this API
+  migration; the entire Mate application is not advertised as SDK-free.
 
 ## Required before stable release
 
 - Legitimate automated application credential provisioning for fresh installs.
-- Remove residual legacy DTO/password-resolution dependencies.
 - Validate issuer-side revocation/recovery in a supervised environment. Automatic
   retirement is not enabled while live processes can retain certificate paths.
 - Test new install, backup/restore, account switch and rollback end to end.
