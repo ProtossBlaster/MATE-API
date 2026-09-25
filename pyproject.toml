@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mate-api"
-version = "0.1.0a3"
+version = "0.1.0a4"
 description = "Unofficial experimental Leapmotor cloud protocol core and B10 command contracts"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["tzdata>=2024.1; platform_system == 'Windows'"]
 classifiers = ["Development Status :: 2 - Pre-Alpha"]
 
 [project.optional-dependencies]

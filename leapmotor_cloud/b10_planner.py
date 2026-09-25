@@ -6,6 +6,7 @@ from .capabilities import evaluate
 from .errors import ValidationError
 from .models import Availability as A, CapabilitySnapshot, Decision, require_aware
 from .operating_availability import OperatingState, front_seat_ventilation_availability
+from .command_contracts import COMMAND_RULES
 
 
 @dataclass(frozen=True)
@@ -26,13 +27,13 @@ def plan_b10(snapshot, state, *, action, now, capability_max_age,
         raise ValidationError('Positive state freshness limit required')
     if snapshot.vehicle.model != 'B10':
         return B10Plan(Decision(A.UNKNOWN,'model_contract_unverified'),None)
-    requirements = {'doors':(10,110),'trunk':(3,130),'windows':(12,230),
-                    'climate':(6,170),'seat_heat':(21,301),'wheel_heat':(15,320)}
+    commands = {'doors':'110','trunk':'130','windows':'230',
+                'climate':'170','seat_heat':'301','wheel_heat':'320'}
     if action=='seat_ventilation':
         decision=front_seat_ventilation_availability(snapshot,state,position=position,
             rudder=rudder,now=now,capability_max_age=capability_max_age,state_max_age=state_max_age)
-    elif action in requirements:
-        ability,right=requirements[action]
+    elif action in commands:
+        right,ability=COMMAND_RULES[commands[action]]
         decision=evaluate(snapshot,ability=ability,right=right,now=now,max_age=capability_max_age)
     else:
         return B10Plan(Decision(A.UNKNOWN,'command_contract_unverified'),None)

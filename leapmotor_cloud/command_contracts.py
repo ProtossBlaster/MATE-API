@@ -5,8 +5,9 @@ fail closed. This module never performs network requests or vehicle commands.
 """
 import math
 import re
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
+from .scheduling import local_start
+from .models import require_aware
 from .errors import ValidationError as CommandContractError
 
 APPOINTMENT_PATH='/carownerservice/v3/api/appremotectl/oversea/appointment'
@@ -149,7 +150,7 @@ def bundle(state,vehicle):
     return out
 
 
-def appointment(cmd,state,vehicle):
+def appointment(cmd,state,vehicle,*,timezone_name=None,now=None):
     fields(state,{'controls'})
     controls=state['controls']
     if not isinstance(controls,list) or len(controls)>20:fail('invalid appointment count')
@@ -164,9 +165,10 @@ def appointment(cmd,state,vehicle):
         days=entry['days']
         if not isinstance(days,list) or any(type(d)is not int or not 0<=d<=6 for d in days) or len(days)!=len(set(days)):
             fail('invalid appointment weekdays')
-        try:start=datetime.strptime(entry['start_time'],'%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo('Europe/Rome'))
-        except (ValueError,TypeError):fail('invalid appointment date')
-        if not days and start<=datetime.now(ZoneInfo('Europe/Rome')):fail('one-shot appointment is in the past')
+        start=local_start(entry['start_time'],timezone_name)
+        current=datetime.now(timezone.utc) if now is None else now
+        require_aware(current)
+        if not days and start<=current:fail('one-shot appointment is in the past')
         finite(entry['update_time'],946684800000,4102444800000)
         out=dict(entry)
         if cmd=='171':
@@ -179,7 +181,7 @@ def appointment(cmd,state,vehicle):
     return {'controls':result}
 
 
-def prepare(cmd,state,vehicle):
+def prepare(cmd,state,vehicle,*,timezone_name=None,now=None):
     model=getattr(vehicle,'car_type',None) or getattr(vehicle,'raw',{}).get('carType','')
     if str(model).upper()!='B10':fail('command contracts currently validated only for B10')
     if cmd not in COMMAND_RULES:fail(UNAVAILABLE.get(cmd,'command contract not implemented for B10: '+cmd))
@@ -211,5 +213,5 @@ def prepare(cmd,state,vehicle):
     if cmd=='180':return navigation(state)
     if cmd=='190':return charge(state)
     if cmd=='360':return bundle(state,vehicle)
-    if cmd in ('171','361'):return appointment(cmd,state,vehicle)
+    if cmd in ('171','361'):return appointment(cmd,state,vehicle,timezone_name=timezone_name,now=now)
     fail('missing validator')
