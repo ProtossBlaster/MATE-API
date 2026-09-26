@@ -50,7 +50,8 @@ $paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env
 }) | ConvertTo-Json -Compress
 """
             env=dict(os.environ,PRIVATE_TEST_ROOT=str(root),PRIVATE_TEST_GENERATION=str(child))
-            result=subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',script],env=env,check=True,capture_output=True,text=True)
+            result=subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
             entries=json.loads(result.stdout)
             self.assertTrue(entries[0]['Protected'])
             for entry in entries:
