@@ -19,3 +19,17 @@ jobs:
       - run: python -m pip install '.[certificates]'
       - run: python -I -m unittest discover -s tests -v
       - run: python -m pip wheel --no-deps --wheel-dir dist .
+  windows-private-material:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install '.[certificates]'
+      - run: python -I -m unittest discover -s tests -p "test_private_storage.py" -v
+      - run: python -I -m unittest discover -s tests -p "test_account_material.py" -v

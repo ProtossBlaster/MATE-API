@@ -17,6 +17,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import ExtendedKeyUsageOID
+from .private_storage import ensure_private_directory
 
 
 class CertificateUnavailable(RuntimeError):
@@ -44,6 +45,11 @@ class AccountCertificateManager:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._lock = Lock()
         self._root = Path(tempfile.mkdtemp(prefix="mate-account-cert-"))
+        try:
+            ensure_private_directory(self._root)
+        except Exception:
+            shutil.rmtree(self._root, ignore_errors=True)
+            raise CertificateUnavailable() from None
         self._current = None
         self._retry_at = None
         self._closed = False
@@ -113,8 +119,10 @@ class AccountCertificateManager:
         key_bytes = key.private_bytes(serialization.Encoding.PEM,
                                      serialization.PrivateFormat.PKCS8,
                                      serialization.NoEncryption())
+        ensure_private_directory(self._root)
         generation = Path(tempfile.mkdtemp(prefix="generation-", dir=self._root))
         try:
+            ensure_private_directory(generation)
             paths = generation / "cert.pem", generation / "key.pem"
             for path, content in zip(paths, (cert_bytes, key_bytes)):
                 fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)

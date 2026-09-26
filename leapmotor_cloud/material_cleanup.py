@@ -2,13 +2,16 @@
 import stat
 from pathlib import Path
 from .errors import ValidationError
+from .private_storage import validate_private_directory
 
 
 def retire_generations(root, retired, *, active_paths, quiescent=False):
     if quiescent is not True or not isinstance(root,Path):
         raise ValidationError('Quiescent readers and explicit private root required')
-    if root.is_symlink() or not root.is_dir() or root.stat().st_mode&0o077:
-        raise ValidationError('Private root required')
+    try:
+        validate_private_directory(root)
+    except (ValueError, OSError):
+        raise ValidationError('Private root required') from None
     root=root.resolve()
     active={Path(p).resolve().parent for p in active_paths}
     selected=[]

@@ -1,6 +1,6 @@
 # Protocol and integration reference
 
-Unofficial Python protocol package for Leapmotor. Current package version: `0.1.0a7` (alpha).
+Unofficial Python protocol package for Leapmotor. Current package version: `0.1.0a8` (alpha).
 This is not an official Leapmotor SDK and is not ready for a production release.
 No certificate, private key, account, vehicle identifier or location fixture is
 provided. Publishing this package does not provision application credentials.
@@ -128,7 +128,13 @@ previous SDK output; no real PIN or vehicle command was used in the comparison.
 
 `account_material.AccountMaterialProvider` decodes the authenticated PKCS12
 response, preserves its certificate chain, validates the pair and writes a new
-private generation (directory 0700, files 0600). Failure never removes a prior
+private generation (POSIX directory 0700, files 0600; Windows protected
+current-user DACL inherited by new generations and files). Windows ACLs are read
+back and checked; unsupported storage fails closed.
+`private_storage.validate_private_directory(path)` validates an existing root
+without changing it, while `ensure_private_directory(path)` creates/protects it.
+Existing Windows generations are not rewritten; retire old references explicitly
+once readers are quiescent. Failure never removes a prior
 generation. Retired generations require explicit coordinated garbage collection.
 The lab uses this provider instead of the old SDK's decoding/file writer.
 
