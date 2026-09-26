@@ -52,7 +52,7 @@ $paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env
             env=dict(os.environ,PRIVATE_TEST_ROOT=str(root),PRIVATE_TEST_GENERATION=str(child))
             # A parent PowerShell 7 runner can export module paths incompatible
             # with Windows PowerShell 5. Let the child build its own defaults.
-            env.pop('PSModulePath',None)
+            env={key:value for key,value in env.items() if key.upper()!='PSMODULEPATH'}
             result=subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,text=True)
             self.assertEqual(result.returncode,0,result.stderr)
             entries=json.loads(result.stdout)
