@@ -1,195 +1,102 @@
-# MATE-API (experimental)
+# MATE-API — client cloud per Leapmotor
 
-Unofficial Python protocol package for Leapmotor. Distribution version `0.1.0a6`.
-This is not an official Leapmotor SDK and is not ready for a production release.
-No certificate, private key, account, vehicle identifier or location fixture is
-provided. Publishing this package does not provision application credentials.
+Client Python indipendente e non ufficiale per le **API cloud di Leapmotor**, con supporto ai **comandi V3**,
+sviluppato per la migrazione di Mate dal precedente SDK `leapmotor_api`.
 
-## Current boundary
+**Versione: `0.1.0a7` · Stato: alpha · Python: 3.11–3.14**
 
-The `leapmotor_cloud` package is independent of Mate and the legacy
-`leapmotor_api` SDK. It provides signing, verified TLS transport, caller-supplied
-sessions, cloud reads/history, capability models, telemetry interpretation,
-certificate lifecycle primitives and explicit B10 command execution primitives.
+Il nome del pacchetto rimane `mate-api`; gli import restano `leapmotor_cloud`.
+Questa è una libreria per sviluppatori: non include l'applicazione Mate, la sua
+interfaccia web o un'installazione Docker completa.
 
-`command_contracts` now contains the payload/permission validators used by the
-4004 adapter. It covers command IDs 110, 120, 130, 160, 170, 171, 180, 190, 192,
-193, 230, 240, 301, 320, 360, 361, 370 and 440. A contract is not evidence of
-permission or physical execution. Sentinel 220/400 is not enabled. ID 193 is
-not authorized on the shared B10 account examined in the lab.
+## Cosa significa V3
 
-The separate Mate `api_v2_bridge` uses this package for vehicle DTOs, migrated
-command convenience methods, PKCS12 password derivation, login, PIN protection
-and account-certificate decoding. The cross-process coordinator and database
-integration remain in the lab, not this standalone distribution. Optional Mate
-image/diagnostic helpers outside the API path are not part of this replacement.
+| Elemento | Versione / nome |
+| --- | --- |
+| Pacchetto Python | `mate-api==0.1.0a7` |
+| Tag GitHub | `v0.1.0a7` |
+| Comandi cloud | `/app/app-control-service/v3/api/appremotectl` |
+| Configurazione e appuntamenti | endpoint `/carownerservice/v3/...` |
+| Login | `/base/base-user/account/v1/login` |
+| Firma delle richieste | `x-api-signature-version: 2.0` |
 
-## Installation and tests
+**V3 indica la versione dei comandi cloud.** La versione della libreria segue
+una numerazione separata: `0.1.0a7` prosegue `0.1.0a6`. Gli endpoint mantengono
+le rispettive versioni: login V1 e firma 2.0 rimangono necessari.
 
-Python >=3.11. Certificate helpers additionally require cryptography >=42:
+## Funzionalità disponibili
+
+- Login indipendente, sessioni autenticate, firma richieste e trasporto TLS verificato.
+- Lettura veicoli, telemetria, configurazione e storico cloud con paginazione.
+- Contratti dei comandi B10 con controllo di capacità, permessi e parametri.
+- Protezione del PIN e gestione locale del materiale del certificato account.
+- Interfaccia di compatibilità per integrare il nuovo client in Mate.
+- Metadati diagnostici limitati per gli errori di login, senza esporre risposte private.
+
+Le ultime correzioni allineano i codici delle capacità ai comandi generati dal Mate
+originale e usano l'identità del dispositivo associata alla sessione restituita dal
+server. L'identità dell'installazione rimane quella usata per il login.
+
+## Installazione della versione
+
+Da GitHub, senza dipendere dalla presenza del pacchetto su PyPI:
 
 ```sh
-pip install '.[certificates]'
+python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a7"
+```
+
+Per sviluppo e verifica locale:
+
+```sh
+git clone https://github.com/ProtossBlaster/MATE-API.git
+cd MATE-API
+git checkout v0.1.0a7
+python -m pip install '.[certificates]'
 python -m unittest discover -s tests -v
+python -c "from importlib.metadata import version; print(version('mate-api'))"
 ```
 
-Tests are offline with synthetic data. One reference-catalog test may skip when
-an external diagnostic fixture is unavailable. No real car command is sent.
-Other-model simulations do not establish physical compatibility.
+L'extra `certificates` installa `cryptography`. I test sono offline e non inviano
+comandi a un'auto. Un test può essere saltato se manca l'inventario esterno opzionale.
 
-## B10 contracts
+## Cosa serve per collegarsi
 
-```python
-from leapmotor_cloud.command_contracts import prepare
+L'integrazione deve fornire credenziali dell'account, identità dell'installazione,
+certificato e chiave applicativi validi, parametri privati necessari e gestione del
+certificato account. **Questo repository non distribuisce quel materiale.**
+Non basta installare il pacchetto per ottenere un accesso cloud funzionante.
 
-# vehicle must represent a fresh authenticated vehicle-list entry, not an
-# arbitrary untrusted dictionary. See below for the compatibility protocol.
-state = prepare('240', {'value': '10'}, vehicle)
-```
+`LoginClient` riceve esplicitamente trasporto, materiale applicativo, orologio,
+generatore nonce e provider del certificato account. Il coordinamento dei processi,
+il database e l'interfaccia utente appartengono all'integrazione Mate separata.
+Il nome storico `api_v2_bridge` di quell'adapter non cambia gli endpoint V3 usati.
 
-The compatibility object supplies `vin`, `car_type`, `is_shared`, `raw`,
-`has_right(code)`, `has_module_right(code)` and `has_ability(code)`. Seat mapping
-uses `rudder` (`left` or `right`). The existing default is left-hand drive;
-callers must provide known driving-side metadata for right-hand-drive vehicles.
-Never use these examples to invent a vehicle's rights or hardware abilities.
+## Compatibilità e verifiche
 
-The raw binding includes `vin`, `carType`, `rightList`, `moduleRights` and
-`abilities`. For a verified B10 owner binding, absent permission lists may be
-resolved from declared capabilities; explicitly empty permission lists remain
-a denial. Shared vehicles require explicit permission/module rights.
+**B10 è l'unico modello abilitato per i comandi nel percorso migrato.** Non tutti
+i comandi e gli allestimenti sono stati provati fisicamente. Non vengono abilitati
+altri modelli sulla sola base dei test sintetici.
 
-The planner and contracts share permission rules. CapabilitySnapshot carries
-explicit rights_present/module_rights_present flags: an empty supplied list is
-not an omitted field. Only an authenticated B10 owner binding may use the
-omission exception. Operating policy is shared, with allow_stale_parked=False
-by default; the lab explicitly opts in. Last-known parked state is not proof of
-the current vehicle state. Planner payload coverage remains deliberately smaller
-than the full contracts and does not authorize untested physical combinations.
+La qualifica precedente a questa release comprende 190 test canonici (uno skip
+opzionale), CI su Python 3.11–3.14 e confronto di 32 casi di generazione comandi
+con Mate originale. Login e letture reali sono riusciti nel laboratorio 4004.
+Una chiusura autorizzata è stata accettata dal cloud; la telemetria successiva era
+recente e indicava chiuso. Questo non dimostra una transizione fisica delle serrature.
 
-## Safety and compatibility
+Un esito cloud positivo non conferma l'esecuzione fisica. I comandi con esito ambiguo
+non devono essere ritentati automaticamente. Restano da qualificare revoca reale,
+recupero, sonno del veicolo, altri modelli e provisioning pubblico automatico.
 
-- Acceptance by the cloud is not physical execution confirmation.
-- Ambiguous command outcomes must not be retried automatically.
-- Timestamp age alone does not prove sleep; an old parked state is not current
-  evidence that a vehicle remains stationary.
-- The lab currently permits stale-but-valid parked readings for remote
-  commands, retaining the last-known speed/ON3 gates. Physical sleeping-car
-  tests remain outstanding.
-- B10 is the only model enabled by the migrated command adapter.
-- Scheduled commands require an explicit IANA timezone. DST gaps and ambiguous
-  wall times are rejected. The lab supplies its configured TZ.
-- Imported cloud trip summaries do not include a verified historical GPS track.
-- Charge history was available to the owner but not the shared account in the
-  observed case; this is not a universal claim about every account or model.
-- Unknown raw signals retain their identifiers; meanings are not inferred.
+## Documentazione e versioni
 
-## Application bootstrap and publication
+- [Changelog](CHANGELOG.md): modifiche e versionamento.
+- [Protocollo e integrazione](PROTOCOL.md): contratti, login, PIN e certificati.
+- [Risultati della migrazione](MIGRATION_NOTES.md): schema storico e mapping verificati.
+- [Migrazione e rollback](MIGRATION.md): confini dell'integrazione.
+- [Stato e requisiti di rilascio](STATUS.md): copertura e limiti residui.
+- [Sicurezza](SECURITY.md): segnalazioni e gestione dei dati privati.
+- [Release GitHub](https://github.com/ProtossBlaster/MATE-API/releases).
 
-The app's built-in application certificate matches the certificate already
-used in the lab, and its matching private key was verified offline. Neither is
-included here. Redistribution permission has not been established. A private
-key embedded in a public image would be extractable.
-
-Account certificate validation/renewal is distinct from provisioning the
-application certificate required for initial login. A new-install login-only
-wizard still needs a legitimate distribution-side provisioning mechanism.
-Existing installations can reuse valid application material.
-
-Before a stable release: settle application provisioning, validate real revocation recovery,
-complete physical trials, and document a tested installation/rollback matrix.
-This repository publishes experimental source only; no stable release is claimed.
-
-## Independent login (0.1.0a2)
-
-`leapmotor_cloud.authentication.LoginClient` implements the reconstructed login
-request without the legacy SDK. It requires the certificates extra, an explicit
-transport, application certificate/key, device identity, clock, nonce source and
-an account-certificate provider. The provider consumes the authenticated login
-response and returns private local PEM paths. No credential files are bundled.
-
-The result is an immutable `CloudSession`. Application/account certificate pairs
-are checked locally; token/signing material is validated before invoking the
-provider, and expiry is checked again afterwards. Requests are single-attempt,
-errors omit remote response bodies/secrets and expose only bounded stage/status/code
-metadata. Each explicit login call makes at most one login request; the package does
-not retry it automatically. Cross-process serialization and throttling belong to the
-caller. The Mate adapter serializes attempts and defers repeated failures for 60 seconds.
-
-The Mate coordinator now delegates to this primitive under its process lock.
-PKCS12 password resolution and application provisioning remain explicit
-integration dependencies; this is not a certificate-free solution.
-
-## PIN and account material (0.1.0a3)
-
-`pin.encrypt_operate_password` implements token-bound AES-CBC/PKCS7 PIN
-protection and rejects missing/short tokens instead of a static-key fallback.
-The lab adapter now uses this function. Twelve synthetic cases match the
-previous SDK output; no real PIN or vehicle command was used in the comparison.
-
-`account_material.AccountMaterialProvider` decodes the authenticated PKCS12
-response, preserves its certificate chain, validates the pair and writes a new
-private generation (directory 0700, files 0600). Failure never removes a prior
-generation. Retired generations require explicit coordinated garbage collection.
-The lab uses this provider instead of the old SDK's decoding/file writer.
-
-Since 0.1.0a6 the lab uses independent password derivation and vehicle models.
-Application-specific parameters and optional password candidates are private
-configuration supplied by the installation, not constants shipped by this repo.
-The standalone LoginClient is called by, rather than replacing, the lab's
-cross-process coordinator.
-
-## Independent Mate interface (0.1.0a6)
-
-mate_compat.MateClientCompatibility is a narrow adapter superclass, not a full
-replacement for every historical SDK method. It never sends HTTP itself. Its
-reads and command methods delegate to the coordinated adapter, which validates
-permissions, payloads, TLS and signing. Unknown commands fail closed.
-get_vehicle_status returns this package's TelemetrySnapshot, not a legacy
-VehicleStatus. The Mate poller uses get_vehicle_raw_status.
-
-Vehicle.from_dict handles comma-separated permission lists and preserves unknown
-capability IDs and raw model metadata. It does not infer battery capacity or
-hardware support from a model name. The lab's UI uses the same vehicle parser.
-
-AccountPasswordResolver implements the reconstructed derivation using injected
-SM4 round parameters and substitution table. Neither those application parameters
-nor private fallback passwords are included. The existing lab migrated them into
-private local storage once; subsequent client execution does not import the SDK.
-Twelve synthetic input pairs matched the old derivation. This establishes local
-algorithm parity, not a new issuer authorization or certificate-free bootstrap.
-
-See [MIGRATION.md](MIGRATION.md) for rollout and rollback boundaries.
-
-## Recovery and material retirement (0.1.0a5)
-
-CloudReadClient invalidates a rejected session on HTTP 401 without replaying the
-request. A late response cannot invalidate a newer session. HTTP 403 preserves
-the session; proprietary API codes are not guessed to mean revocation.
-AccountCertificateManager.invalidate rejects fallback to an explicitly rejected
-lease. This requires caller-supplied revocation evidence, not a local CRL claim.
-
-material_cleanup.retire_generations requires an explicit retired-generation
-manifest, active paths and quiescent=True. Stop all readers before using it.
-It refuses active generations, symlinks, hard links, unexpected files and paths
-outside the private root. It is not scheduled automatically in the live lab.
-Telemetry observed_at now refers only to vehicle signal 1; cloud_collected_at
-is separate and cannot turn an old vehicle frame into a fresh one.
-
-## Public project
-
-Repository: https://github.com/ProtossBlaster/MATE-API
-
-See [STATUS.md](STATUS.md) for the release gates and
-[SECURITY.md](SECURITY.md) before contributing. Source code is MIT licensed;
-this does not license or distribute Leapmotor credentials, keys or APK assets.
-The repository deliberately excludes the vehicle-specific lab database and
-application integration. No automatic vehicle commands run in CI.
-
-
-## September 2026 migration verification
-
-[Migration notes](MIGRATION_NOTES.md) document the verified history schema, command
-mapping corrections, server-bound session device metadata, and remaining physical
-and provisioning qualifications. The current source has passed the canonical
-suite; obsolete experimental test copies are not the release gate. Laboratory
-read success is not evidence of physical command execution or vehicle wake-up.
+Codice con licenza MIT. Progetto non ufficiale, non affiliato a Leapmotor.
+La licenza del codice non concede diritti sui certificati, sulle chiavi o sugli
+asset dell'applicazione Leapmotor.

@@ -1,6 +1,6 @@
 # Implementation and release gates
 
-Current version: 0.1.0a6, experimental. Not a complete login-only application.
+Current version: 0.1.0a7 — Leapmotor cloud client with V3 commands, alpha. Not a complete login-only application.
 
 ## Implemented and tested offline
 
