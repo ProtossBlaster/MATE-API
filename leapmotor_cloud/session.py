@@ -23,6 +23,27 @@ class SessionExpired(AuthenticationRequired):
     pass
 
 
+def session_device_id(token, fallback):
+    """Resolve the device binding from a token received over verified TLS.
+
+    This decodes metadata, not a signature verification or authentication check.
+    Tokens without this optional binding retain the supplied installation ID.
+    """
+    try:
+        payload = token.split('.')[1]
+        data = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+        name = data.get('user_name')
+        parts = name.split(',') if isinstance(name, str) else []
+        if len(parts) >= 4 and parts[2]:
+            value = parts[2]
+            if len(value) > 16384 or any(not 33 <= ord(c) <= 126 for c in value):
+                raise ValidationError('Invalid session device binding')
+            return value
+    except (ValueError, TypeError, IndexError, AttributeError):
+        raise ValidationError('Invalid session device metadata') from None
+    return fallback
+
+
 def _expiry_from_token(token):
     try:
         payload = token.split(".")[1]
@@ -69,7 +90,7 @@ class CloudSession:
         params = data["signParam"]
         key = derive_v2_key(token, params.get("r2"), params.get("r3"))
         expiry = expires_at if expires_at is not None else _expiry_from_token(token)
-        return cls(token, str(account), device_id, key, client_cert, expiry)
+        return cls(token, str(account), session_device_id(token, device_id), key, client_cert, expiry)
 
     @property
     def expiry_known(self):

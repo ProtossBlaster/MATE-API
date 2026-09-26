@@ -43,7 +43,7 @@ class PlannerTests(unittest.TestCase):
     def setUp(self):
         self.now=datetime.now(timezone.utc)
         self.snapshot=CapabilitySnapshot(VehicleIdentity('TEST','B10'),
-            frozenset({1,3,5,12,21,32,42,43}),frozenset({110,130,170,230,301,320,370}),
+            frozenset({10,3,6,12,21,15,42,43}),frozenset({110,130,170,230,301,320,370}),
             frozenset({200}),True,True,self.now)
         self.state=OperatingState('TEST',self.now,False,False)
 
