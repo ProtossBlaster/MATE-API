@@ -29,7 +29,7 @@ class PrivateStorageTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name=='nt','Native Windows ACL inspection')
     def test_windows_dacl_excludes_other_users_and_rejects_tampering(self):
-        from leapmotor_cloud.private_storage import ensure_private_directory, validate_private_directory
+        from leapmotor_cloud.private_storage import ensure_private_directory, validate_private_directory, validate_private_file
         import json, subprocess
         with tempfile.TemporaryDirectory() as tmp:
             root=ensure_private_directory(Path(tmp)/'private')
@@ -37,6 +37,7 @@ class PrivateStorageTests(unittest.TestCase):
             child=Path(tempfile.mkdtemp(prefix='generation-',dir=root))
             ensure_private_directory(child)
             key=child/'key.pem';key.write_bytes(b'synthetic-test-only')
+            validate_private_file(key)
             script = """
 $ErrorActionPreference = 'Stop'
 $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
@@ -61,6 +62,10 @@ $paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env
                 self.assertEqual(entry['Count'],1)
                 self.assertTrue(entry['OnlyCurrentUser'])
                 self.assertTrue(entry['FullControl'])
+            subprocess.run(['icacls',str(key),'/grant','*S-1-1-0:(R)'],check=True,capture_output=True)
+            with self.assertRaises(ValueError):validate_private_file(key)
+            # A private parent cannot make an explicitly exposed file private.
+            validate_private_directory(child)
             # Explicitly introduce Everyone read access; read-only validation
             # must reject it, and protecting again must remove that ACE.
             subprocess.run(['icacls',str(root),'/grant','*S-1-1-0:(R)'],check=True,capture_output=True)
@@ -77,3 +82,12 @@ $paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env
             (old/'key.pem').write_bytes(b'synthetic-only')
             self.assertEqual(retire_generations(root,[old],active_paths=[],quiescent=True),1)
             self.assertFalse(old.exists())
+
+    @unittest.skipIf(os.name=='nt','POSIX file modes')
+    def test_private_file_rejects_exposed_permissions(self):
+        from leapmotor_cloud.private_storage import validate_private_file
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'parameters.json';path.write_bytes(b'synthetic')
+            path.chmod(0o600);validate_private_file(path)
+            path.chmod(0o644)
+            with self.assertRaises(ValueError):validate_private_file(path)

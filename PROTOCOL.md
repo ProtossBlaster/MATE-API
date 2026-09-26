@@ -133,6 +133,8 @@ current-user DACL inherited by new generations and files). Windows ACLs are read
 back and checked; unsupported storage fails closed.
 `private_storage.validate_private_directory(path)` validates an existing root
 without changing it, while `ensure_private_directory(path)` creates/protects it.
+`validate_private_file(path)` checks file permissions separately, including explicit
+Windows file ACEs that could expose a file despite its protected parent.
 Existing Windows generations are not rewritten; retire old references explicitly
 once readers are quiescent. Failure never removes a prior
 generation. Retired generations require explicit coordinated garbage collection.
