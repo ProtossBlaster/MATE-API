@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0a8 — 2026-09-26
+
+- Materiale account su Windows protetto da una DACL verificata, riservata
+  all’utente corrente e trasmessa ai nuovi file delle generazioni.
+- Validazione di sola lettura della directory privata per disponibilità e
+  ritiro esplicito delle generazioni; su POSIX restano obbligatori permessi 0700.
+- Test Windows nativi delle ACL e dei permessi ereditati, oltre alla suite Linux.
+- Versione del pacchetto indipendente dal protocollo comandi V3.
+
 ## 0.1.0a7 — 2026-09-26
 
 Aggiornamento del client **MATE-API per Leapmotor**, successivo a `0.1.0a6`.

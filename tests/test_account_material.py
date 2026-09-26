@@ -17,8 +17,9 @@ class AccountMaterialTests(unittest.TestCase):
         first=self.provider(self.data);second=self.provider(self.data)
         self.assertNotEqual(first,second)
         for p in first+second:
-            self.assertTrue(p.is_file());self.assertEqual(os.stat(p).st_mode&0o777,0o600)
-        self.assertEqual(os.stat(self.root).st_mode&0o777,0o700)
+            self.assertTrue(p.is_file())
+            if os.name!='nt':self.assertEqual(os.stat(p).st_mode&0o777,0o600)
+        if os.name!='nt':self.assertEqual(os.stat(self.root).st_mode&0o777,0o700)
 
     def test_invalid_bundle_keeps_previous(self):
         first=self.provider(self.data)
@@ -39,6 +40,7 @@ class AccountMaterialTests(unittest.TestCase):
         with self.assertRaises(AccountMaterialUnavailable):self.provider({'base64Cert':base64.b64encode(bundle).decode()})
         self.assertEqual(list(self.root.iterdir()),[])
 
+    @unittest.skipIf(os.name=='nt','Windows storage is protected by a DACL')
     def test_permissive_root_rejected(self):
         self.root.mkdir(mode=0o755);self.root.chmod(0o755)
         with self.assertRaises(AccountMaterialUnavailable):self.provider(self.data)

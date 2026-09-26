@@ -44,8 +44,8 @@ class AccountMaterialProvider:
                 except (ValueError,TypeError):continue
             if pair is None:raise ValueError()
             key,cert,chain=pair
-            self.root.mkdir(parents=True,exist_ok=True,mode=0o700)
-            if self.root.is_symlink() or self.root.stat().st_mode & 0o077:raise ValueError()
+            from .private_storage import ensure_private_directory
+            ensure_private_directory(self.root)
             generation=Path(tempfile.mkdtemp(prefix='generation-',dir=self.root))
             paths=generation/'cert.pem',generation/'key.pem'
             cert_pem=cert.public_bytes(serialization.Encoding.PEM)
