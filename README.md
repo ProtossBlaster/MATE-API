@@ -3,7 +3,7 @@
 Client Python indipendente e non ufficiale per le **API cloud di Leapmotor**, con supporto ai **comandi V3**,
 sviluppato per la migrazione di Mate dal precedente SDK `leapmotor_api`.
 
-**Versione: `0.1.0a8` · Stato: alpha · Python: 3.11–3.14**
+**Versione: `0.1.0a9` · Stato: alpha · Python: 3.11–3.14**
 
 Il nome del pacchetto rimane `mate-api`; gli import restano `leapmotor_cloud`.
 Questa è una libreria per sviluppatori: non include l'applicazione Mate, la sua
@@ -13,15 +13,15 @@ interfaccia web o un'installazione Docker completa.
 
 | Elemento | Versione / nome |
 | --- | --- |
-| Pacchetto Python | `mate-api==0.1.0a8` |
-| Tag GitHub | `v0.1.0a8` |
+| Pacchetto Python | `mate-api==0.1.0a9` |
+| Tag GitHub | `v0.1.0a9` |
 | Comandi cloud | `/app/app-control-service/v3/api/appremotectl` |
 | Configurazione e appuntamenti | endpoint `/carownerservice/v3/...` |
 | Login | `/base/base-user/account/v1/login` |
 | Firma delle richieste | `x-api-signature-version: 2.0` |
 
 **V3 indica la versione dei comandi cloud.** La versione della libreria segue
-una numerazione separata: `0.1.0a8` prosegue `0.1.0a7`. Gli endpoint mantengono
+una numerazione separata: `0.1.0a9` prosegue `0.1.0a8`. Gli endpoint mantengono
 le rispettive versioni: login V1 e firma 2.0 rimangono necessari.
 
 ## Funzionalità disponibili
@@ -42,7 +42,7 @@ server. L'identità dell'installazione rimane quella usata per il login.
 Da GitHub, senza dipendere dalla presenza del pacchetto su PyPI:
 
 ```sh
-python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a8"
+python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a9"
 ```
 
 Per sviluppo e verifica locale:
@@ -50,7 +50,7 @@ Per sviluppo e verifica locale:
 ```sh
 git clone https://github.com/ProtossBlaster/MATE-API.git
 cd MATE-API
-git checkout v0.1.0a8
+git checkout v0.1.0a9
 python -m pip install '.[certificates]'
 python -m unittest discover -s tests -v
 python -c "from importlib.metadata import version; print(version('mate-api'))"

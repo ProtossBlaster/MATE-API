@@ -91,3 +91,17 @@ $paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env
             path.chmod(0o600);validate_private_file(path)
             path.chmod(0o644)
             with self.assertRaises(ValueError):validate_private_file(path)
+
+    @unittest.skipUnless(os.name=='nt','Native Windows ACL inspection')
+    def test_windows_protect_existing_file_without_directory_inheritance_flags(self):
+        from leapmotor_cloud.private_storage import _windows_directory, validate_private_file
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'existing.key';path.write_bytes(b'synthetic-existing-material')
+            _windows_directory(path,protect=True,directory=False)
+            validate_private_file(path)
+            subprocess.run(['icacls',str(path),'/grant','*S-1-1-0:(R)'],check=True,capture_output=True)
+            with self.assertRaises(ValueError):validate_private_file(path)
+            _windows_directory(path,protect=True,directory=False)
+            validate_private_file(path)
+            self.assertEqual(path.read_bytes(),b'synthetic-existing-material')
