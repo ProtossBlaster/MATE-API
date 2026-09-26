@@ -21,7 +21,7 @@ class SchedulingTests(unittest.TestCase):
 
     def test_contract_uses_supplied_clock_and_zone(self):
         v=SimpleNamespace(vin='SYNTHETIC',car_type='B10',is_shared=False,
-            raw={'vin':'SYNTHETIC','carType':'B10','abilities':[7]})
+            raw={'vin':'SYNTHETIC','carType':'B10','abilities':[9]})
         entry=dict(days=[],set_id='offline',start_time='2026-09-26 12:00:00',
             update_time=1790424000000,on='1',circle='in',mode='cold',operate='auto',
             position='all',temperature='22',windlevel='1',wshld='0')

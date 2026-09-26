@@ -13,12 +13,12 @@ sessions, cloud reads/history, capability models, telemetry interpretation,
 certificate lifecycle primitives and explicit B10 command execution primitives.
 
 `command_contracts` now contains the payload/permission validators used by the
-4001 adapter. It covers command IDs 110, 120, 130, 160, 170, 171, 180, 190, 192,
+4004 adapter. It covers command IDs 110, 120, 130, 160, 170, 171, 180, 190, 192,
 193, 230, 240, 301, 320, 360, 361, 370 and 440. A contract is not evidence of
 permission or physical execution. Sentinel 220/400 is not enabled. ID 193 is
 not authorized on the shared B10 account examined in the lab.
 
-The separate 4001 `api_v2_bridge` uses this package for vehicle DTOs, migrated
+The separate Mate `api_v2_bridge` uses this package for vehicle DTOs, migrated
 command convenience methods, PKCS12 password derivation, login, PIN protection
 and account-certificate decoding. The cross-process coordinator and database
 integration remain in the lab, not this standalone distribution. Optional Mate
@@ -110,10 +110,12 @@ response and returns private local PEM paths. No credential files are bundled.
 The result is an immutable `CloudSession`. Application/account certificate pairs
 are checked locally; token/signing material is validated before invoking the
 provider, and expiry is checked again afterwards. Requests are single-attempt,
-errors omit remote response bodies/secrets, and one instance rate-limits login
-attempts to one per minute. Cross-process coordination remains the caller's job.
+errors omit remote response bodies/secrets and expose only bounded stage/status/code
+metadata. Each explicit login call makes at most one login request; the package does
+not retry it automatically. Cross-process serialization and throttling belong to the
+caller. The Mate adapter serializes attempts and defers repeated failures for 60 seconds.
 
-The 4001 coordinator now delegates to this primitive under its process lock.
+The Mate coordinator now delegates to this primitive under its process lock.
 PKCS12 password resolution and application provisioning remain explicit
 integration dependencies; this is not a certificate-free solution.
 
@@ -182,3 +184,12 @@ See [STATUS.md](STATUS.md) for the release gates and
 this does not license or distribute Leapmotor credentials, keys or APK assets.
 The repository deliberately excludes the vehicle-specific lab database and
 application integration. No automatic vehicle commands run in CI.
+
+
+## September 2026 migration verification
+
+[Migration notes](MIGRATION_NOTES.md) document the verified history schema, command
+mapping corrections, server-bound session device metadata, and remaining physical
+and provisioning qualifications. The current source has passed the canonical
+suite; obsolete experimental test copies are not the release gate. Laboratory
+read success is not evidence of physical command execution or vehicle wake-up.

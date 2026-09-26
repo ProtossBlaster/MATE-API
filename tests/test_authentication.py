@@ -36,11 +36,11 @@ class LoginTests(unittest.TestCase):
         with self.assertRaises(LoginUnavailable) as caught:self.client.login('u','p',device_id='d')
         self.provider.assert_not_called();self.assertNotIn('do-not-print',str(caught.exception))
 
-    def test_timeout_no_retry_and_cooldown(self):
+    def test_timeout_no_automatic_retry_and_explicit_retry_allowed(self):
         self.fake.on_send=Mock(side_effect=TimeoutError('private-data'))
-        for _ in range(2):
+        for attempt in range(2):
             with self.assertRaises(LoginUnavailable):self.client.login('u','p',device_id='d')
-        self.assertEqual(len(self.fake.requests),1)
+            self.assertEqual(len(self.fake.requests),attempt+1)
 
     def test_invalid_application_pair_no_network(self):
         with patch('leapmotor_cloud.authentication.certificate_usable',return_value=False):
@@ -74,3 +74,12 @@ class LoginTests(unittest.TestCase):
         self.provider.assert_not_called()
 
 if __name__=='__main__':unittest.main()
+
+class LoginDiagnosticTests(unittest.TestCase):
+    def test_diagnostic_metadata_is_bounded_and_secret_free(self):
+        error=LoginUnavailable('transport',503,None)
+        self.assertEqual((error.stage,error.http_status,error.api_code),('transport',503,None))
+        self.assertNotIn('503',str(error))
+        unknown=LoginUnavailable('private-response', 'secret-status', 'secret-code')
+        self.assertEqual((unknown.stage,unknown.http_status,unknown.api_code),('unknown',None,None))
+        self.assertNotIn('private-response',str(unknown))

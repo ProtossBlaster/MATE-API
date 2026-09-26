@@ -28,22 +28,22 @@ class PolicyParityTests(unittest.TestCase):
             for rights in (None,[],[110]):
                 for modules in (None,[],[200]):
                     with self.subTest(owner=owner,rights=rights,modules=modules):
-                        raw=dict(vin='SYNTHETIC',carType='B10',rightList=rights,moduleRights=modules,abilities=[1])
+                        raw=dict(vin='SYNTHETIC',carType='B10',rightList=rights,moduleRights=modules,abilities=[10])
                         v=SimpleNamespace(vin='SYNTHETIC',car_type='B10',is_shared=not owner,raw=raw,
                             has_right=lambda c:c in (rights or []),has_module_right=lambda c:c in (modules or []))
-                        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','B10'),frozenset({1}),
+                        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','B10'),frozenset({10}),
                             frozenset(rights or []),frozenset(modules or []),owner,True,self.now,
                             rights_present=rights is not None,module_rights_present=modules is not None)
-                        decision=evaluate(snap,ability=1,right=110,now=self.now,max_age=timedelta(minutes=5))
+                        decision=evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5))
                         if decision.state is Availability.AVAILABLE:
                             self.assertEqual(prepare('110',{'value':'lock'},v),{'value':'lock'})
                         else:
                             with self.assertRaises(ValidationError):prepare('110',{'value':'lock'},v)
 
     def test_owner_omission_not_extended_to_other_models(self):
-        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','T03'),frozenset({1}),frozenset(),
+        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','T03'),frozenset({10}),frozenset(),
             frozenset(),True,True,self.now,False,False)
-        self.assertNotEqual(evaluate(snap,ability=1,right=110,now=self.now,max_age=timedelta(minutes=5)).state,
+        self.assertNotEqual(evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5)).state,
                             Availability.AVAILABLE)
 
     def test_stale_opt_in_and_motion_matrix(self):
@@ -56,7 +56,7 @@ class PolicyParityTests(unittest.TestCase):
                     self.assertEqual(decision.state is Availability.AVAILABLE,expected)
 
     def test_planner_honors_stale_opt_in_without_claiming_live_state(self):
-        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','B10'),frozenset({1}),frozenset({110}),
+        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','B10'),frozenset({10}),frozenset({110}),
             frozenset({200}),True,True,self.now)
         state=OperatingState('SYNTHETIC',self.now-timedelta(hours=2),False,False)
         args=dict(action='doors',value='lock',now=self.now,capability_max_age=timedelta(minutes=5),state_max_age=timedelta(seconds=60))

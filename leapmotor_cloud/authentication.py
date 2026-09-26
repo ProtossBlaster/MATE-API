@@ -18,7 +18,12 @@ LOGIN_PATH = '/base/base-user/account/v1/login'
 
 
 class LoginUnavailable(RuntimeError):
-    def __init__(self):
+    def __init__(self, stage='unknown', http_status=None, api_code=None):
+        allowed={'unknown','cooldown','application_certificate','transport','response',
+                 'cloud_rejection','session_metadata','account_certificate','session_validation'}
+        self.stage=stage if stage in allowed else 'unknown'
+        self.http_status=http_status if type(http_status) is int and 100<=http_status<=599 else None
+        self.api_code=api_code if type(api_code) is int and abs(api_code)<=10**12 else None
         super().__init__('Cloud login unavailable; no automatic retry')
 
 
@@ -30,7 +35,7 @@ class LoginClient:
             raise ValidationError('Explicit certificate provider, clock and nonce required')
         self._transport, self._application_cert = transport, application_cert
         self._provider, self._clock, self._nonce = account_certificate_provider, clock, nonce_factory
-        self._language, self._lock, self._next_attempt = language, Lock(), None
+        self._language, self._lock = language, Lock()
 
     def login(self, username, password, *, device_id):
         for value in (username,password,device_id):
@@ -38,10 +43,8 @@ class LoginClient:
                 raise ValidationError('Missing or invalid login input')
         with self._lock:
             now=self._clock();require_aware(now)
-            if self._next_attempt is not None and now<self._next_attempt:
-                raise LoginUnavailable()
             if not certificate_usable(*self._application_cert,now=now):
-                raise LoginUnavailable()
+                raise LoginUnavailable('application_certificate')
             nonce=self._nonce()
             if not isinstance(nonce,str) or not nonce.isascii() or not nonce.isdecimal() or len(nonce)>32:
                 raise ValidationError('Invalid login nonce')
@@ -54,15 +57,23 @@ class LoginClient:
                             'x-api-signature-version':'2.0','X-P12_ENC_ALG':'1'})
             request=Request('POST',GLOBAL_ORIGIN+LOGIN_PATH,headers,
                             json.dumps(body,separators=(',',':')).encode())
-            self._next_attempt=now+timedelta(seconds=60)
+            stage='transport';http_status=None;api_code=None
             try:
                 response=self._transport.send(request,client_cert=self._application_cert)
+                stage='response'
+                if isinstance(response,Response):http_status=response.status
                 if not isinstance(response,Response) or response.status!=200 or len(response.body)>MAX_RESPONSE_BYTES:
                     raise ValueError()
                 envelope=json.loads(response.body.decode(),object_pairs_hook=_unique_object,parse_constant=_invalid_constant)
                 if not isinstance(envelope,dict):raise ValueError()
                 codes=[envelope[k] for k in ('code','result') if k in envelope]
+                if len(codes)==1 or len(codes)==2 and codes[0]==codes[1]:
+                    value=codes[0]
+                    if type(value) is int:api_code=value
+                    elif isinstance(value,str) and value.isascii() and value.isdecimal() and len(value)<=12:api_code=int(value)
+                stage='cloud_rejection'
                 if not codes or any(type(c)is bool or str(c)!='0' for c in codes):raise ValueError()
+                stage='session_metadata'
                 data=envelope.get('data')
                 if not isinstance(data,dict):raise ValueError()
                 token=data.get('accessToken')
@@ -75,13 +86,15 @@ class LoginClient:
                 normalized=dict(data,token=token)
                 CloudSession.from_login_data(normalized,device_id=device_id,
                                              client_cert=self._application_cert,expires_at=expiry)
+                stage='account_certificate'
                 pair=self._provider(data)
                 validate_cert_paths(pair)
                 finished=self._clock();require_aware(finished)
                 if not certificate_usable(*pair,now=finished):raise ValueError()
+                stage='session_validation'
                 session=CloudSession.from_login_data(normalized,device_id=device_id,
                                                     client_cert=pair,expires_at=expiry)
                 session.ensure_valid(finished)
                 return session
             except Exception:
-                raise LoginUnavailable() from None
+                raise LoginUnavailable(stage,http_status,api_code) from None

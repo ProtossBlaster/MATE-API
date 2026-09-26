@@ -15,11 +15,11 @@ from .errors import ValidationError as CommandContractError
 APPOINTMENT_PATH='/carownerservice/v3/api/appremotectl/oversea/appointment'
 # cmd: (permission, ability). Passenger ventilation is resolved per position.
 COMMAND_RULES={
-    '110':(110,1),'120':(120,2),'130':(130,3),'160':(160,10),
-    '170':(170,5),'171':(171,7),'180':(180,30),'190':(340,34),
-    '192':(192,48),'193':(193,82),'230':(230,12),'240':(240,13),
-    '301':(301,21),'320':(320,32),'360':(360,38),'361':(361,38),
-    '370':(370,42),'440':(440,59),
+    '110':(110,10),'120':(120,11),'130':(130,3),'160':(190,10),
+    '170':(170,6),'171':(171,9),'180':(180,52),'190':(340,35),
+    '192':(192,48),'193':(193,82),'230':(230,12),'240':(161,13),
+    '301':(301,21),'320':(320,15),'360':(360,38),'361':(361,38),
+    '370':(370,42),'440':(440,19),
 }
 UNAVAILABLE={'220':'Sentinel: app uses command 400, but its B10 availability and actuation are not validated.',
              '400':'Sentinel is disabled by the examined official-app availability path.'}
