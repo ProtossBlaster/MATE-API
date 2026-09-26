@@ -1,6 +1,6 @@
 # Protocol and integration reference
 
-Unofficial Python protocol package for Leapmotor. Current package version: `0.1.0a8` (alpha).
+Unofficial Python protocol package for Leapmotor. Current package version: `0.1.0a9` (alpha).
 This is not an official Leapmotor SDK and is not ready for a production release.
 No certificate, private key, account, vehicle identifier or location fixture is
 provided. Publishing this package does not provision application credentials.
