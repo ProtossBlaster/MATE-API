@@ -1,11 +1,11 @@
 # Changelog
 
-## 3.0.0a1 — 2026-09-26
+## 0.1.0a7 — 2026-09-26
 
-Prima prerelease della linea **MATE-API — Leapmotor Cloud API V3**.
-Prosegue il lavoro della versione sorgente 0.1.0a6; il salto di numerazione rende
-esplicita la linea V3. Il nome della distribuzione e gli import Python restano
-`mate-api` e `leapmotor_cloud`. Nessuna pubblicazione PyPI è implicita.
+Aggiornamento del client **MATE-API per Leapmotor**, successivo a `0.1.0a6`.
+Il supporto ai **comandi V3** è distinto dalla versione del pacchetto `0.1.0a7`.
+Il nome della distribuzione e gli import Python restano `mate-api` e
+`leapmotor_cloud`. Nessuna pubblicazione PyPI è implicita.
 
 ### Correzioni incluse
 
@@ -19,9 +19,9 @@ esplicita la linea V3. Il nome della distribuzione e gli import Python restano
 
 ### Documentazione e confezionamento
 
-- README dedicato a installazione, API V3, requisiti e compatibilità.
+- README dedicato a installazione, comandi V3, requisiti e compatibilità.
 - Riferimento tecnico precedente conservato in PROTOCOL.md.
-- Metadati pacchetto e stato aggiornati a 3.0.0a1; tag v3.0.0a1.
+- Metadati pacchetto e stato aggiornati a 0.1.0a7; tag v0.1.0a7.
 - Test dell'inventario esterno opzionale compatibile anche con checkout vicini
   alla radice del filesystem: assenza del fixture segnalata come skip.
 

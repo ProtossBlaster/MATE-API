@@ -1,9 +1,9 @@
-# MATE-API — Leapmotor Cloud API V3
+# MATE-API — client cloud per Leapmotor
 
-Client Python indipendente e non ufficiale per le **API cloud V3 di Leapmotor**,
+Client Python indipendente e non ufficiale per le **API cloud di Leapmotor**, con supporto ai **comandi V3**,
 sviluppato per la migrazione di Mate dal precedente SDK `leapmotor_api`.
 
-**Versione: `3.0.0a1` · Stato: alpha · Python: 3.11–3.14**
+**Versione: `0.1.0a7` · Stato: alpha · Python: 3.11–3.14**
 
 Il nome del pacchetto rimane `mate-api`; gli import restano `leapmotor_cloud`.
 Questa è una libreria per sviluppatori: non include l'applicazione Mate, la sua
@@ -13,18 +13,16 @@ interfaccia web o un'installazione Docker completa.
 
 | Elemento | Versione / nome |
 | --- | --- |
-| Linea del progetto | MATE-API V3 |
-| Pacchetto Python | `mate-api==3.0.0a1` |
-| Tag GitHub | `v3.0.0a1` |
+| Pacchetto Python | `mate-api==0.1.0a7` |
+| Tag GitHub | `v0.1.0a7` |
 | Comandi cloud | `/app/app-control-service/v3/api/appremotectl` |
 | Configurazione e appuntamenti | endpoint `/carownerservice/v3/...` |
 | Login | `/base/base-user/account/v1/login` |
 | Firma delle richieste | `x-api-signature-version: 2.0` |
 
-**V3 identifica gli endpoint cloud migrati**, non una conversione di ogni endpoint
-alla stessa versione. Login V1 e firma 2.0 rimangono necessari. La versione
-`3.0.0a1` inaugura la linea V3 dopo la serie sperimentale `0.1.0a*`; non indica
-una release stabile né tre precedenti release pubbliche del pacchetto.
+**V3 indica la versione dei comandi cloud.** La versione della libreria segue
+una numerazione separata: `0.1.0a7` prosegue `0.1.0a6`. Gli endpoint mantengono
+le rispettive versioni: login V1 e firma 2.0 rimangono necessari.
 
 ## Funzionalità disponibili
 
@@ -44,7 +42,7 @@ server. L'identità dell'installazione rimane quella usata per il login.
 Da GitHub, senza dipendere dalla presenza del pacchetto su PyPI:
 
 ```sh
-python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v3.0.0a1"
+python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a7"
 ```
 
 Per sviluppo e verifica locale:
@@ -52,7 +50,7 @@ Per sviluppo e verifica locale:
 ```sh
 git clone https://github.com/ProtossBlaster/MATE-API.git
 cd MATE-API
-git checkout v3.0.0a1
+git checkout v0.1.0a7
 python -m pip install '.[certificates]'
 python -m unittest discover -s tests -v
 python -c "from importlib.metadata import version; print(version('mate-api'))"
