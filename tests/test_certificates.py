@@ -59,7 +59,12 @@ class CertificateTests(unittest.TestCase):
         self.assertNotEqual(old.paths, new.paths)
         self.assertTrue(all(p.exists() for p in old.paths + new.paths))
         for path in old.paths + new.paths:
-            self.assertEqual(os.stat(path).st_mode & 0o777, 0o600)
+            if os.name == 'nt':
+                from leapmotor_cloud.private_storage import validate_private_directory
+                validate_private_directory(path.parent)
+                validate_private_directory(path.parent.parent)
+            else:
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o600)
         manager.close()
         self.assertTrue(all(not p.exists() for p in old.paths + new.paths))
         with self.assertRaises(CertificateUnavailable):
