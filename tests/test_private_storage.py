@@ -34,12 +34,13 @@ class PrivateStorageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=ensure_private_directory(Path(tmp)/'private')
             validate_private_directory(root)
-            child=root/'generation-test';child.mkdir()
+            child=Path(tempfile.mkdtemp(prefix='generation-',dir=root))
+            ensure_private_directory(child)
             key=child/'key.pem';key.write_bytes(b'synthetic-test-only')
             script = """
 $ErrorActionPreference = 'Stop'
 $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$paths = @($env:PRIVATE_TEST_ROOT, (Join-Path $env:PRIVATE_TEST_ROOT 'generation-test'), (Join-Path $env:PRIVATE_TEST_ROOT 'generation-test/key.pem'))
+$paths = @($env:PRIVATE_TEST_ROOT, $env:PRIVATE_TEST_GENERATION, (Join-Path $env:PRIVATE_TEST_GENERATION 'key.pem'))
 @($paths | ForEach-Object {
     $acl = Get-Acl -LiteralPath $_
     $rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
@@ -48,7 +49,7 @@ $paths = @($env:PRIVATE_TEST_ROOT, (Join-Path $env:PRIVATE_TEST_ROOT 'generation
         FullControl = (@($rules | Where-Object { ($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -ne [System.Security.AccessControl.FileSystemRights]::FullControl }).Count -eq 0) }
 }) | ConvertTo-Json -Compress
 """
-            env=dict(os.environ,PRIVATE_TEST_ROOT=str(root))
+            env=dict(os.environ,PRIVATE_TEST_ROOT=str(root),PRIVATE_TEST_GENERATION=str(child))
             result=subprocess.run(['powershell','-NoProfile','-NonInteractive','-Command',script],env=env,check=True,capture_output=True,text=True)
             entries=json.loads(result.stdout)
             self.assertTrue(entries[0]['Protected'])

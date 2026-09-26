@@ -18,6 +18,9 @@ class AccountMaterialTests(unittest.TestCase):
         self.assertNotEqual(first,second)
         for p in first+second:
             self.assertTrue(p.is_file())
+            if os.name=='nt':
+                from leapmotor_cloud.private_storage import validate_private_directory
+                validate_private_directory(p.parent)
             if os.name!='nt':self.assertEqual(os.stat(p).st_mode&0o777,0o600)
         if os.name!='nt':self.assertEqual(os.stat(self.root).st_mode&0o777,0o700)
 

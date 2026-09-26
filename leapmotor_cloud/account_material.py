@@ -47,6 +47,7 @@ class AccountMaterialProvider:
             from .private_storage import ensure_private_directory
             ensure_private_directory(self.root)
             generation=Path(tempfile.mkdtemp(prefix='generation-',dir=self.root))
+            ensure_private_directory(generation)
             paths=generation/'cert.pem',generation/'key.pem'
             cert_pem=cert.public_bytes(serialization.Encoding.PEM)
             for extra in chain or ():cert_pem+=extra.public_bytes(serialization.Encoding.PEM)
