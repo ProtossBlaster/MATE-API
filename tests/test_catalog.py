@@ -71,7 +71,10 @@ class CatalogTests(unittest.TestCase):
             load_reference_catalog(str(self.path))
 
     def test_real_reference_inventory_has_64_unique_unverified_actions(self):
-        root = Path(__file__).resolve().parents[3]
+        parents = Path(__file__).resolve().parents
+        if len(parents) < 4:
+            self.skipTest("External diagnostic inventory not included in a standalone package copy")
+        root = parents[3]
         reference = root / "outputs/leapmotor-app-analysis/mate_command_registry_baseline_2026-09-25.json"
         if not reference.is_file():
             self.skipTest("External diagnostic inventory not included in a standalone package copy")
@@ -80,4 +83,3 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(entries), 64, "Reference inventory drift requires review")
         self.assertEqual(len({e.action for e in entries}), 64)
         self.assertTrue(all(e.evidence == "legacy_inventory_unverified" for e in entries))
-
