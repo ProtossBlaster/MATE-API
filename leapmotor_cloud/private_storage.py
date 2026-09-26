@@ -39,7 +39,19 @@ def validate_private_directory(path):
     return path
 
 
-def _windows_directory(path, *, protect):
+def validate_private_file(path):
+    """Validate an existing private file, including explicit Windows file ACEs."""
+    path = Path(path)
+    if _is_link(path) or not path.is_file() or path.stat().st_nlink != 1:
+        raise ValueError('Unsafe private file')
+    if os.name == 'nt':
+        _windows_directory(path, protect=False, directory=False)
+    elif path.stat().st_mode & 0o077:
+        raise ValueError('Private file permissions required')
+    return path
+
+
+def _windows_directory(path, *, protect, directory=True):
     # Convert a protected DACL with ONE inheritable allow entry for the process
     # user. Do not mistake Windows' synthetic POSIX mode bits for an ACL check.
     import ctypes
@@ -101,7 +113,7 @@ def _windows_directory(path, *, protect):
         control, revision = wintypes.WORD(), wintypes.DWORD()
         present, defaulted, acl = wintypes.BOOL(), wintypes.BOOL(), ctypes.c_void_p()
         if (not advapi.GetSecurityDescriptorControl(actual, ctypes.byref(control), ctypes.byref(revision))
-                or not control.value & 0x1000
+                or (directory and not control.value & 0x1000)
                 or not advapi.GetSecurityDescriptorDacl(actual, ctypes.byref(present), ctypes.byref(acl), ctypes.byref(defaulted))
                 or not present.value or not acl.value
                 or ctypes.cast(acl, ctypes.POINTER(ACL)).contents.count != 1):
@@ -110,7 +122,7 @@ def _windows_directory(path, *, protect):
         if not advapi.GetAce(acl, 0, ctypes.byref(entry)):
             raise OSError('Private directory protection unavailable')
         ace = ctypes.cast(entry, ctypes.POINTER(ACE)).contents
-        if (ace.kind != 0 or ace.flags != 3 or ace.mask != 0x1f01ff
+        if (ace.kind != 0 or ace.flags not in ((3,) if directory else (0, 16)) or ace.mask != 0x1f01ff
                 or not advapi.EqualSid(entry.value + ACE.sid.offset, sid)):
             raise ValueError('Private directory permissions required')
     finally:
