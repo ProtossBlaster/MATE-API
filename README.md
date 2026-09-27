@@ -31,7 +31,7 @@ V1 login and signature version 2.0 are still required.
 
 - Independent login, authenticated sessions, request signing, and verified TLS transport.
 - Vehicle, telemetry, configuration, and paginated cloud-history reads.
-- B10 command contracts with capability, permission, and parameter checks.
+- Command contracts for every model, with capability, permission, and parameter checks.
 - PIN protection and local management of account-certificate material.
 - A compatibility interface for integrating the client into Mate.
 - Limited diagnostic metadata for login failures without exposing private responses.
@@ -77,11 +77,21 @@ adapter's historical `api_v2_bridge` name does not change the V3 endpoints used.
 
 ## Compatibility and validation
 
-**B10 is the only model enabled for commands in the migrated path.** Not every
-command and trim has been physically tested. Synthetic tests alone do not enable
-additional models.
+**Commands are enabled for every model, gated by the cloud's own data for that
+vehicle** — `abilities`, `rightList`, `moduleRights` — and never by the model name.
+A command a car has not got is refused by the cloud (`result: 40`) without the
+vehicle moving.
 
-Qualification for this release includes 190 canonical tests (one optional skip),
+**Physical actuation remains proven only on the B10.** Cloud acceptance is not
+physical execution, on any model. What the contracts do carry per model is the
+payload shape where the cars were measured to disagree: the B10 obeys a bare
+`{"operate":"off"}` for full climate off and the T03 obeys `operate: "off"` only
+inside the full seven-field body. The caller chooses the shape; the contracts
+validate it and never reshape it.
+
+Qualification for this release includes 210 canonical tests — 207 executed here, plus
+two Windows-native ACL cases that run in the Windows CI job and one external-inventory
+case absent from a standalone copy —
 CI on Python 3.11–3.14, and comparison of 32 command-generation cases with the
 original Mate client. Real login and read operations succeeded in lab 4004. An
 authorized lock command was accepted by the cloud; subsequent fresh telemetry

@@ -44,7 +44,20 @@ class CompatibilityTests(unittest.TestCase):
         for action in ('autopark','fota_install','seat_heat'):
             with self.assertRaises(MateAPIError):self.api._remote_control(vin='SYNTHETIC',action=action)
         self.api._remote_control_raw.assert_not_called()
-        with self.assertRaises(MateAPIError):self.api.sentry_mode_on('SYNTHETIC')
+
+    def test_sentry_mode_sends_its_v1_contract(self):
+        """Sentry mode is a command Mate has always offered; V3 must not drop it.
+
+        The shipped V1 client sends cmd 220 with {"value":"1"}/{"value":"0"} (leapmotor_api
+        models.py, RemoteActionCtlSentryMode) and declares right 220. Refusing it locally hid a
+        function from every car; the cloud refuses it by itself (result 40) where it is absent.
+        """
+        for name,value in (('sentry_mode_on','1'),('sentry_mode_off','0')):
+            with self.subTest(name=name):
+                getattr(self.api,name)('SYNTHETIC')
+                sent=self.api._remote_control_raw.call_args.kwargs
+                self.assertEqual(sent['cmd_id'],'220')
+                self.assertEqual(json.loads(sent['cmd_content']),{'value':value})
 
     def test_schedule_preserves_explicit_fields(self):
         self.api.set_charge_schedule('SYNTHETIC',enabled=True,soc_limit=90,start_time='01:00',

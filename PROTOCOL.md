@@ -10,13 +10,21 @@ provided. Publishing this package does not provision application credentials.
 The `leapmotor_cloud` package is independent of Mate and the legacy
 `leapmotor_api` SDK. It provides signing, verified TLS transport, caller-supplied
 sessions, cloud reads/history, capability models, telemetry interpretation,
-certificate lifecycle primitives and explicit B10 command execution primitives.
+certificate lifecycle primitives and explicit command execution primitives.
 
 `command_contracts` now contains the payload/permission validators used by the
 4004 adapter. It covers command IDs 110, 120, 130, 160, 170, 171, 180, 190, 192,
-193, 230, 240, 301, 320, 360, 361, 370 and 440. A contract is not evidence of
-permission or physical execution. Sentinel 220/400 is not enabled. ID 193 is
-not authorized on the shared B10 account examined in the lab.
+193, 220, 230, 240, 301, 320, 360, 361, 370 and 440. A contract is not evidence of
+permission or physical execution. ID 220 (sentry mode) carries the contract the
+original V1 client used — `{"value":"1"|"0"}`, right 220 — with no ability code
+identified in the app, so the account right, the control module and the cloud's own
+refusal are its only gate; its actuation is unverified on every model. ID 400 stays
+disabled by the examined official-app availability path. ID 193 is not authorized on
+the shared B10 account examined in the lab.
+
+Ability codes are documentation, and `ABILITY_NOT_GATED` names the ones that are not a usable
+gate because a model was measured to under-declare them: climate (170/171), because the European
+T03 omits AC_ON (6) and cools anyway (Mate #67). An id joins that set only with a measurement.
 
 The separate Mate `api_v2_bridge` uses this package for vehicle DTOs, migrated
 command convenience methods, PKCS12 password derivation, login, PIN protection
@@ -37,7 +45,7 @@ Tests are offline with synthetic data. One reference-catalog test may skip when
 an external diagnostic fixture is unavailable. No real car command is sent.
 Other-model simulations do not establish physical compatibility.
 
-## B10 contracts
+## Command contracts
 
 ```python
 from leapmotor_cloud.command_contracts import prepare
@@ -54,14 +62,15 @@ callers must provide known driving-side metadata for right-hand-drive vehicles.
 Never use these examples to invent a vehicle's rights or hardware abilities.
 
 The raw binding includes `vin`, `carType`, `rightList`, `moduleRights` and
-`abilities`. For a verified B10 owner binding, absent permission lists may be
-resolved from declared capabilities; explicitly empty permission lists remain
-a denial. Shared vehicles require explicit permission/module rights.
+`abilities`. For a verified owner binding — on any model — absent permission lists
+may be resolved from declared capabilities; explicitly empty permission lists remain
+a denial. Shared vehicles require explicit permission/module rights. `carType` is
+carried for the caller's payload choices; it never grants or withholds a command.
 
 The planner and contracts share permission rules. CapabilitySnapshot carries
 explicit rights_present/module_rights_present flags: an empty supplied list is
-not an omitted field. Only an authenticated B10 owner binding may use the
-omission exception. Operating policy is shared, with allow_stale_parked=False
+not an omitted field. Only an authenticated owner binding may use the
+omission exception, on any model. Operating policy is shared, with allow_stale_parked=False
 by default; the lab explicitly opts in. Last-known parked state is not proof of
 the current vehicle state. Planner payload coverage remains deliberately smaller
 than the full contracts and does not authorize untested physical combinations.
@@ -75,7 +84,10 @@ than the full contracts and does not authorize untested physical combinations.
 - The lab currently permits stale-but-valid parked readings for remote
   commands, retaining the last-known speed/ON3 gates. Physical sleeping-car
   tests remain outstanding.
-- B10 is the only model enabled by the migrated command adapter.
+- Every model is enabled by the migrated command adapter; the cloud's per-vehicle
+  data decides what is permitted, and its refusal is the safety net.
+- Physical actuation is proven only on the B10. Payload shapes that were measured to
+  differ per model (full climate off) are the caller's to supply.
 - Scheduled commands require an explicit IANA timezone. DST gaps and ambiguous
   wall times are rejected. The lab supplies its configured TZ.
 - Imported cloud trip summaries do not include a verified historical GPS track.

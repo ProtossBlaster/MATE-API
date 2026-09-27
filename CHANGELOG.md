@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.0a10 — 2026-09-27
+
+Migrazione completa ai **comandi V3 per ogni modello**, non più solo per la B10.
+Il permesso non lo decide più il nome del modello ma il dato che il cloud pubblica
+per quel veicolo — `abilities`, `rightList`, `moduleRights` — e il rifiuto del cloud
+stesso: un comando che quell'auto non ha torna con `result: 40` (无此权限) senza che
+il veicolo si muova.
+
+### Modifiche
+
+- `permission_decision()` non riceve più il modello: la decisione era già
+  indipendente dal modello tranne che nell'eccezione di omissione del proprietario,
+  che ora vale su ogni modello. `bindcars` può omettere `rightList`/`moduleRights`
+  per l'auto dell'account e l'app ufficiale ne ricava i permessi dalle `abilities`:
+  è la stessa app per tutta la gamma. Una lista di permessi esplicitamente vuota
+  resta un rifiuto, e un'auto condivisa non ha l'eccezione su nessun modello.
+- `prepare()` non rifiuta più i modelli diversi dalla B10. `carType` resta nel
+  binding per le scelte di payload del chiamante, non concede né nega un comando.
+- `air()` accetta lo spegnimento completo nel corpo intero a sette campi e non
+  rimodella più il payload. I due modelli misurati vogliono forme **opposte**: la
+  B10/C10 obbedisce a `{"operate":"off"}` nudo e ignora il corpo intero, la T03
+  obbedisce a `operate: "off"` solo dentro il corpo intero e ignora la forma nuda
+  (verificato in auto rileggendo `acSwitch`, non da un ACK: il cloud risponde
+  `code: 0` a tutte le varianti). `close` viene corretto in `off` sul posto,
+  conservando la forma scelta dal chiamante. La riscrittura misurata
+  `wind` → `nohotcold` si applica solo quando il clima viene acceso.
+- Il clima non è più bloccato sull'`ability`: la T03 europea omette AC_ON (codice 6) e
+  raffredda comunque — misurato in auto e riportato in tutto l'ecosistema (Mate #67) — quindi
+  un cancello sull'`ability` nasconderebbe la funzione più usata di quel modello. Il codice
+  resta documentato in `COMMAND_RULES`; il nuovo `ABILITY_NOT_GATED` dice quali codici NON
+  valgono come cancello, e si aggiunge solo con una misura. Il diritto dell'account, il modulo
+  di controllo e il rifiuto del cloud restano in vigore.
+- Sentinella migrata: comando 220 con il contratto del client V1
+  (`{"value":"1"|"0"}`, diritto 220). Nessun codice di `ability` è mai stato
+  identificato nell'app, quindi valgono il diritto dell'account, il modulo di
+  controllo e il rifiuto del cloud. Il comando 400 resta disabilitato: lo
+  disabilita il percorso di disponibilità dell'app ufficiale.
+- Il limite dei sedili posteriori nella preparazione è dell'adattatore, non di un
+  modello: il messaggio non nomina più la B10.
+
+### Cosa resta non provato
+
+L'accettazione del cloud non è esecuzione fisica, su nessun modello. Le prove in
+auto restano confermate solo sulla B10.
+
 ## 0.1.0a9 — 2026-09-26
 
 - Corretto il ripristino della DACL dei file privati già esistenti su Windows:
