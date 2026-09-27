@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0a9 — 2026-09-26
+
+- Corretto il ripristino della DACL dei file privati già esistenti su Windows:
+  i flag di ereditarietà OICI si applicano alle directory, non ai file.
+- Regressione Windows nativa: protezione di un file esistente, verifica delle ACL
+  e rimozione di accessi aggiuntivi senza modificare i byte del file.
+
 ## 0.1.0a8 — 2026-09-26
 
 - Materiale account su Windows protetto da una DACL verificata, riservata

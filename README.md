@@ -6,7 +6,7 @@ Independent, unofficial Python client for the **Leapmotor cloud APIs**, with
 support for **V3 commands**. It was developed to migrate Mate away from the
 previous `leapmotor_api` SDK.
 
-**Version: `0.1.0a8` · Status: alpha · Python: 3.11–3.14**
+**Version: `0.1.0a9` · Status: alpha · Python: 3.11–3.14**
 
 The package name remains `mate-api`, while imports use `leapmotor_cloud`.
 This is a developer library: it does not include the Mate application, its web
@@ -16,15 +16,15 @@ interface, or a complete Docker installation.
 
 | Component | Version / name |
 | --- | --- |
-| Python package | `mate-api==0.1.0a8` |
-| GitHub tag | `v0.1.0a8` |
+| Python package | `mate-api==0.1.0a9` |
+| GitHub tag | `v0.1.0a9` |
 | Cloud commands | `/app/app-control-service/v3/api/appremotectl` |
 | Configuration and appointments | `/carownerservice/v3/...` endpoints |
 | Login | `/base/base-user/account/v1/login` |
 | Request signature | `x-api-signature-version: 2.0` |
 
 **V3 is the cloud command version.** The library has a separate versioning
-scheme: `0.1.0a8` follows `0.1.0a7`. Each endpoint retains its own version;
+scheme: `0.1.0a9` follows `0.1.0a8`. Each endpoint retains its own version;
 V1 login and signature version 2.0 are still required.
 
 ## Available features
@@ -45,7 +45,7 @@ The installation identity remains the one used during login.
 Install directly from GitHub without relying on a PyPI publication:
 
 ```sh
-python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a8"
+python -m pip install "mate-api[certificates] @ git+https://github.com/ProtossBlaster/MATE-API.git@v0.1.0a9"
 ```
 
 For local development and verification:
@@ -53,7 +53,7 @@ For local development and verification:
 ```sh
 git clone https://github.com/ProtossBlaster/MATE-API.git
 cd MATE-API
-git checkout v0.1.0a8
+git checkout v0.1.0a9
 python -m pip install '.[certificates]'
 python -m unittest discover -s tests -v
 python -c "from importlib.metadata import version; print(version('mate-api'))"
