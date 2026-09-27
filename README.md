@@ -89,7 +89,7 @@ payload shape where the cars were measured to disagree: the B10 obeys a bare
 inside the full seven-field body. The caller chooses the shape; the contracts
 validate it and never reshape it.
 
-Qualification for this release includes 210 canonical tests — 207 executed here, plus
+Qualification for this release includes 222 canonical tests — 219 executed here, plus
 two Windows-native ACL cases that run in the Windows CI job and one external-inventory
 case absent from a standalone copy —
 CI on Python 3.11–3.14, and comparison of 32 command-generation cases with the

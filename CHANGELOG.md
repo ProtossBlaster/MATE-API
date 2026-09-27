@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0a11 — 2026-09-27
+
+**Rinnovo della sessione**: una sessione si può rinnovare invece di ricomprarla con un login.
+
+Misurato sul cloud vero il 27/09/2026. La risposta di login porta `refreshToken`,
+`tokenExpireTime` (**7200 s**) e `refreshTokenExpireTime` (**604799 s**, sette giorni), e
+`POST /base/base-user/token/v1/refresh` con `{"refreshToken": …}` risponde `code 0` con una
+sessione intera nuova: token d'accesso, token di rinnovo e i parametri di firma. Il certificato
+di account **non** viene riemesso, quindi la sessione conserva la coppia che ha già.
+
+### Modifiche
+
+- `LoginClient.refresh(session, device_id=…)`: una sola richiesta, nessun tentativo automatico,
+  stessa forma di errore del login. Un rifiuto (`302010219 Token refresh error`) diventa
+  `LoginUnavailable`, mai una sessione lasciata zitta com'era. Il fornitore del certificato di
+  account non viene mai chiamato.
+- `CloudSession` porta `refresh_token` e `refresh_expires_at`, fuori da `repr` come ogni altro
+  materiale di sessione, più `renewable(now)`.
+- **La durata del token la dichiara il cloud.** Prima ogni sessione era tagliata a mezz'ora:
+  era una scelta prudente fatta quando niente diceva altro, ed è la ragione per cui
+  un'installazione spendeva un login ogni trenta minuti. Ora il limite è `tokenExpireTime`
+  quando c'è; dove il cloud non dichiara niente, restano i trenta minuti di prima.
+- Una durata dichiarata che non sia un numero intero positivo entro un mese viene **rifiutata**,
+  non indovinata: una sessione non deve sopravvivere al proprio token perché un campo è arrivato
+  malformato.
+
 ## 0.1.0a10 — 2026-09-27
 
 Migrazione completa ai **comandi V3 per ogni modello**, non più solo per la B10.
