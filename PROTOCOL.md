@@ -127,6 +127,24 @@ metadata. Each explicit login call makes at most one login request; the package 
 not retry it automatically. Cross-process serialization and throttling belong to the
 caller. The Mate adapter serializes attempts and defers repeated failures for 60 seconds.
 
+## Session renewal (0.1.0a11)
+
+`LoginClient.refresh(session, device_id=…)` renews a session from its refresh token:
+`POST /base/base-user/token/v1/refresh` with `{"refreshToken": …}`, signed as an
+authenticated request. Measured against the live cloud on 27 September 2026: it answers
+`code 0` with a complete new session — access token, refresh token and signing
+parameters — and does **not** re-issue the account certificate, so the renewed session
+keeps the pair it already holds and the certificate provider is never called. A refresh
+token the cloud will not take answers `302010219 Token refresh error`; that surfaces as
+`LoginUnavailable`, never as a session silently left unchanged.
+
+The login response states both lifetimes: `tokenExpireTime` (7200 s measured) and
+`refreshTokenExpireTime` (604799 s). Sessions are bounded by the stated value where the
+cloud gives one, and by the previous 30-minute default where it does not. A stated
+lifetime that is not a plain positive number within a month is refused rather than
+guessed at. `CloudSession.renewable(now)` says whether a renewal is possible at all;
+deciding WHEN to renew belongs to the caller, as does serialization.
+
 The Mate coordinator now delegates to this primitive under its process lock.
 PKCS12 password resolution and application provisioning remain explicit
 integration dependencies; this is not a certificate-free solution.
