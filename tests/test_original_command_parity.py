@@ -15,5 +15,9 @@ class OriginalCommandParityTests(unittest.TestCase):
  def test_original_sunshade_and_preheat_rights(self):
   self.assertEqual(COMMAND_RULES['240'][0],161)
   self.assertEqual(COMMAND_RULES['160'][0],190)
+ def test_original_sentry_contract(self):
+  # SDK RemoteActionCtlSentryMode: cmd_id 220, VehicleRight.SENTRY_MODE = 220, and no
+  # ability code was ever identified for it in the app.
+  self.assertEqual(COMMAND_RULES['220'],(220,None))
 
 if __name__=='__main__':unittest.main()

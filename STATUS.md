@@ -8,7 +8,7 @@ Current version: 0.1.0a9 — Leapmotor cloud client with V3 commands, alpha. Not
 - Single-attempt login primitive with injected application/account material.
 - Token-bound PIN encryption with no static-key fallback.
 - PKCS12 decoding, certificate/key checks and private file generations.
-- B10 command payload/permission validators and command execution primitives.
+- Command payload/permission validators for every model and command execution primitives.
 - Cloud history reads, pagination and preservation of unknown/raw data.
 - Cross-platform Python package and offline synthetic regression suite.
 - Explicit IANA timezone and injected clock for appointments; DST gaps and
@@ -42,6 +42,15 @@ Current version: 0.1.0a9 — Leapmotor cloud client with V3 commands, alpha. Not
   owner-account charge history. A shared account did not expose that charge history.
 - Several B10 commands have user-confirmed physical trials. Not every command or
   sleeping-vehicle condition is validated.
+- Commands are enabled for every model. What decides is the cloud's own per-vehicle
+  data (abilities, rightList, moduleRights) and the cloud's refusal (result 40 for a
+  command the car has not got). Physical actuation outside the B10 is still unproven,
+  and cloud acceptance never proves it.
+- The one payload difference measured between models is full climate off: bare
+  {"operate":"off"} on the B10/C10, the full seven-field body with operate=off on the
+  T03 (user-confirmed on-car by re-reading acSwitch, not from an ACK). Each model
+  ignores the other's shape while answering code 0, so contracts validate the shape
+  the caller supplies and never rewrite it.
 - The lab API adapter no longer inherits the old SDK or uses its DTOs/password
   resolver. Existing application parameters were migrated locally into private
   storage, not published. This is not a fresh-install provisioning solution.
@@ -57,7 +66,9 @@ Current version: 0.1.0a9 — Leapmotor cloud client with V3 commands, alpha. Not
   Local backup/restore, account-cache isolation and offline rollback are checked;
   a live login/account-switch sequence is not substituted with synthetic proof.
 - Complete physical tests with a supervising user, including sleeping vehicles.
-- Obtain per-model/trim evidence before enabling models beyond B10.
+- Collect per-model/trim actuation evidence. Sending is open and fail-safe (the cloud
+  refuses what a car has not got); what still needs a supervised trial per model is
+  whether an accepted command physically executes.
 
 Historical GPS routes and MQTT are not advertised as supported. Synthetic tests
 on different model names are not hardware compatibility validation.

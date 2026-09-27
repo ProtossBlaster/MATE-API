@@ -30,7 +30,7 @@ le rispettive versioni: login V1 e firma 2.0 rimangono necessari.
 
 - Login indipendente, sessioni autenticate, firma richieste e trasporto TLS verificato.
 - Lettura veicoli, telemetria, configurazione e storico cloud con paginazione.
-- Contratti dei comandi B10 con controllo di capacità, permessi e parametri.
+- Contratti dei comandi per ogni modello, con controllo di capacità, permessi e parametri.
 - Protezione del PIN e gestione locale del materiale del certificato account.
 - Interfaccia di compatibilità per integrare il nuovo client in Mate.
 - Metadati diagnostici limitati per gli errori di login, senza esporre risposte private.
@@ -75,12 +75,17 @@ Il nome storico `api_v2_bridge` di quell'adapter non cambia gli endpoint V3 usat
 
 ## Compatibilità e verifiche
 
-**B10 è l'unico modello abilitato per i comandi nel percorso migrato.** Non tutti
+**I comandi sono abilitati per ogni modello**, con il permesso deciso dai dati
+che il cloud pubblica per quel veicolo (`abilities`, `rightList`, `moduleRights`)
+e mai dal nome del modello: un comando che l’auto non ha viene rifiutato dal
+cloud stesso (`result: 40`) senza che il veicolo si muova.
+**L’attuazione fisica resta provata solo sulla B10.** Non tutti
 i comandi e gli allestimenti sono stati provati fisicamente. Non vengono abilitati
 altri modelli sulla sola base dei test sintetici.
 
-La qualifica precedente a questa release comprende 190 test canonici (uno skip
-opzionale), CI su Python 3.11–3.14 e confronto di 32 casi di generazione comandi
+La qualifica di questa release comprende 210 test canonici — 207 eseguiti qui, più
+due casi ACL nativi Windows che girano nel job CI Windows e un caso di inventario
+esterno assente da una copia autonoma — CI su Python 3.11–3.14 e confronto di 32 casi di generazione comandi
 con Mate originale. Login e letture reali sono riusciti nel laboratorio 4004.
 Una chiusura autorizzata è stata accettata dal cloud; la telemetria successiva era
 recente e indicava chiuso. Questo non dimostra una transizione fisica delle serrature.

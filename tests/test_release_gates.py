@@ -24,27 +24,42 @@ class PolicyParityTests(unittest.TestCase):
     def setUp(self):self.now=datetime.now(timezone.utc)
 
     def test_owner_shared_absent_empty_and_explicit_matrix(self):
-        for owner in (True,False):
-            for rights in (None,[],[110]):
-                for modules in (None,[],[200]):
-                    with self.subTest(owner=owner,rights=rights,modules=modules):
-                        raw=dict(vin='SYNTHETIC',carType='B10',rightList=rights,moduleRights=modules,abilities=[10])
-                        v=SimpleNamespace(vin='SYNTHETIC',car_type='B10',is_shared=not owner,raw=raw,
-                            has_right=lambda c:c in (rights or []),has_module_right=lambda c:c in (modules or []))
-                        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','B10'),frozenset({10}),
-                            frozenset(rights or []),frozenset(modules or []),owner,True,self.now,
-                            rights_present=rights is not None,module_rights_present=modules is not None)
-                        decision=evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5))
-                        if decision.state is Availability.AVAILABLE:
-                            self.assertEqual(prepare('110',{'value':'lock'},v),{'value':'lock'})
-                        else:
-                            with self.assertRaises(ValidationError):prepare('110',{'value':'lock'},v)
+        for model in ('B10','C10','T03','B05','UNRECOGNISED'):
+            for owner in (True,False):
+                for rights in (None,[],[110]):
+                    for modules in (None,[],[200]):
+                        with self.subTest(model=model,owner=owner,rights=rights,modules=modules):
+                            raw=dict(vin='SYNTHETIC',carType=model,rightList=rights,moduleRights=modules,abilities=[10])
+                            v=SimpleNamespace(vin='SYNTHETIC',car_type=model,is_shared=not owner,raw=raw,
+                                has_right=lambda c:c in (rights or []),has_module_right=lambda c:c in (modules or []))
+                            snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC',model),frozenset({10}),
+                                frozenset(rights or []),frozenset(modules or []),owner,True,self.now,
+                                rights_present=rights is not None,module_rights_present=modules is not None)
+                            decision=evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5))
+                            if decision.state is Availability.AVAILABLE:
+                                self.assertEqual(prepare('110',{'value':'lock'},v),{'value':'lock'})
+                            else:
+                                with self.assertRaises(ValidationError):prepare('110',{'value':'lock'},v)
 
-    def test_owner_omission_not_extended_to_other_models(self):
-        snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC','T03'),frozenset({10}),frozenset(),
-            frozenset(),True,True,self.now,False,False)
-        self.assertNotEqual(evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5)).state,
-                            Availability.AVAILABLE)
+    def test_owner_omission_belongs_to_the_binding_not_to_the_model(self):
+        """The same authenticated owner binding gets the same verdict on every model.
+
+        bindcars may omit rightList/moduleRights for the account's own car; the official app then
+        derives the owner's permissions from abilities, and it is one app for the whole range.
+        Reading the model here would deny a T03 owner a function its own cloud entry declares.
+        """
+        verdicts={}
+        for model in ('B10','C10','T03','B05','UNRECOGNISED'):
+            snap=CapabilitySnapshot(VehicleIdentity('SYNTHETIC',model),frozenset({10}),frozenset(),
+                frozenset(),True,True,self.now,False,False)
+            verdicts[model]=evaluate(snap,ability=10,right=110,now=self.now,max_age=timedelta(minutes=5)).state
+        self.assertEqual(set(verdicts.values()),{Availability.AVAILABLE},verdicts)
+        # A shared car is still refused on every model: the exception is the owner's, not the car's.
+        for model in ('B10','T03'):
+            shared=CapabilitySnapshot(VehicleIdentity('SYNTHETIC',model),frozenset({10}),frozenset(),
+                frozenset(),False,True,self.now,False,False)
+            self.assertNotEqual(evaluate(shared,ability=10,right=110,now=self.now,
+                                         max_age=timedelta(minutes=5)).state,Availability.AVAILABLE)
 
     def test_stale_opt_in_and_motion_matrix(self):
         for stale in (False,True):

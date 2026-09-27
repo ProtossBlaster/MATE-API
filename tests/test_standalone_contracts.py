@@ -28,9 +28,6 @@ class StandaloneContractTests(unittest.TestCase):
         for rudder,physical in [('left','left_front'),('right','right_front')]:
             self.assertEqual(prepare('370',{'position':'driver','level':'1'},self.vehicle(rudder=rudder))['position'],physical)
 
-    def test_non_b10_not_advertised_as_supported(self):
-        with self.assertRaises(ValidationError):prepare('240',{'value':'10'},self.vehicle(model='T03',rights=[240]))
-
     def test_windows_all_steps(self):
         for n in range(11):self.assertEqual(prepare('230',{'value':str(n)},self.vehicle()),{'value':str(n)})
         with self.assertRaises(ValidationError):prepare('230',{'value':'11'},self.vehicle())
