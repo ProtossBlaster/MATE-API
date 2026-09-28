@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0a12 — 2026-09-28
+
+**Verifica stretta dei certificati**: Python 3.13 accende `VERIFY_X509_STRICT` per default in
+`ssl.create_default_context()`, e i certificati di Leapmotor non la passano. Il certificato del
+server `appgateway.leapmotor-international.de` porta `basicConstraints CA:FALSE` **insieme** a
+`keyCertSign` nel key usage, combinazione che la verifica stretta rifiuta
+(`Key usage keyCertSign invalid for non-CA cert`). La stessa contraddizione sta nel certificato
+applicativo che il client presenta: è un errore di modello in tutta la loro PKI, e da questa parte
+non si può riemettere niente.
+
+Misurato il 28/09/2026 contro il gateway vero, stesso OpenSSL 3.6.3, cambiando solo l'interprete:
+Python 3.12.13 completa l'handshake (TLSv1.3), Python 3.14.7 lo rifiuta.
+
+Il contesto di verifica è ora costruito da `transport.tls_context(ca_file)`, che toglie il flag
+**esplicitamente** invece di limitarsi a non metterlo. È una deroga stretta: quel contesto si fida
+di **un solo** certificato — la sub-CA passata al trasporto — e il trasporto parla solo a una lista
+chiusa di host, quindi i controlli stretti stavano sopra un'ancora già pinnata.
+
 ## 0.1.0a11 — 2026-09-27
 
 **Rinnovo della sessione**: una sessione si può rinnovare invece di ricomprarla con un login.
