@@ -2,7 +2,7 @@ import subprocess
 import sys
 import unittest
 from types import SimpleNamespace
-from leapmotor_cloud.command_contracts import prepare,require
+from leapmotor_cloud.command_contracts import charge,prepare,require
 from leapmotor_cloud.errors import ValidationError
 
 class StandaloneContractTests(unittest.TestCase):
@@ -46,3 +46,38 @@ from leapmotor_cloud.certificate_validation import certificate_usable
         subprocess.run([sys.executable,'-c',code],check=True,capture_output=True,timeout=10)
 
 if __name__=='__main__':unittest.main()
+
+
+class ChargeFlagRefusalTests(unittest.TestCase):
+    """A refused charge flag says which one, and what it held.
+
+    Three flags travel in cmd 190 and any value of any of them that is not the integer 0 or 1 gave
+    one indistinguishable sentence. Two of the three are not the caller's to choose: `circulation`
+    and `recharge` are read from the car and written straight back, so a car that publishes anything
+    else stopped its owner with a message naming none of the three (leapmotor-mate #343, @jcconca).
+    """
+
+    BASE = dict(chargeEnable=1,chargesoc=90,circulation=1,cycles='1,1,1,1,1,1,1',
+                endtime='15:00',recharge=0,starttime='11:00')
+
+    def refusal(self,**over):
+        state=dict(self.BASE);state.update(over)
+        with self.assertRaises(ValidationError) as caught:charge(state)
+        return str(caught.exception)
+
+    def test_a_complete_schedule_is_accepted(self):
+        self.assertEqual(charge(dict(self.BASE)),self.BASE)
+
+    def test_every_flag_and_value_is_named(self):
+        for key in ('chargeEnable','circulation','recharge'):
+            for value in (2,-1,None,True,False,'1',1.0,''):
+                message=self.refusal(**{key:value})
+                self.assertIn(key,message,(key,value))
+                self.assertIn(repr(value),message,(key,value))
+
+    def test_two_different_faults_do_not_read_the_same(self):
+        self.assertNotEqual(self.refusal(circulation=2),self.refusal(recharge=2))
+        self.assertNotEqual(self.refusal(circulation=2),self.refusal(circulation=None))
+
+    def test_a_day_mask_with_no_days_keeps_its_own_words(self):
+        self.assertIn('day',self.refusal(cycles='0,0,0,0,0,0,0'))

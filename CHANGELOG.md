@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0a13 — 2026-09-29
+
+**Un flag di ricarica rifiutato dice quale.** Nel comando 190 viaggiano tre flag —
+`chargeEnable`, `circulation`, `recharge` — e qualunque valore di uno qualunque di essi che non
+fosse l'intero 0 o 1 produceva la stessa identica frase, `invalid charge flag`. Due dei tre non li
+sceglie chi chiama: `circulation` e `recharge` si leggono dall'auto e si riscrivono tali e quali,
+quindi un'auto che ne pubblica un altro fermava il proprietario con un messaggio che non ne nomina
+nessuno (leapmotor-mate #343, @jcconca: il primo commento ha dovuto chiedere al segnalante di
+leggersi quei campi dentro la propria auto).
+
+Adesso il rifiuto nomina il flag e il valore che portava — `invalid charge flag circulation=2` —
+e siccome chi chiama registra già il rifiuto, la risposta arriva nel suo log senza una chiamata al
+cloud in più. Sono flag: nessun VIN, nessun token, niente da oscurare.
+
 ## 0.1.0a12 — 2026-09-28
 
 **Verifica stretta dei certificati**: Python 3.13 accende `VERIFY_X509_STRICT` per default in
