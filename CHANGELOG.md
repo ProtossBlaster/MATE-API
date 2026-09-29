@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0a14 — 2026-09-30
+
+**Un flag di ricarica letto dall'auto torna all'auto com'era.** Il comando 190 rimanda tutto il
+piano, e solo `chargeEnable` e `chargesoc` li sceglie chi chiama: `circulation` e `recharge` si
+leggono dal `config.3` dell'auto e si riscrivono tali e quali. Tutti e due venivano controllati
+contro {0, 1} — un dominio supposto, mai misurato. La C10 di @jcconca pubblica `circulation=2`,
+misurato nel pacchetto diagnostico che ha prodotto proprio la nomina della 0.1.0a13
+(`invalid charge flag circulation=2`, leapmotor-mate #343): da allora ogni automazione notturna
+sua falliva. Quei due adesso accettano qualunque intero l'auto abbia pubblicato e rifiutano solo un
+valore che non si è potuto LEGGERE — `None`, `''`, `'1'`, `1.0`, un booleano — sempre per nome e con
+il valore. `chargeEnable` tiene 0/1: è un interruttore, e nessuno lo legge dall'auto per riscriverlo.
+
 ## 0.1.0a13 — 2026-09-29
 
 **Un flag di ricarica rifiutato dice quale.** Nel comando 190 viaggiano tre flag —

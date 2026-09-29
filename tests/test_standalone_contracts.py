@@ -68,16 +68,22 @@ class ChargeFlagRefusalTests(unittest.TestCase):
     def test_a_complete_schedule_is_accepted(self):
         self.assertEqual(charge(dict(self.BASE)),self.BASE)
 
+    # An INTEGER the car published is no longer a fault for the two flags Mate only echoes:
+    # @jcconca's C10 publishes circulation=2, measured in the bundle this very naming produced.
+    # → tests/test_a_flag_read_from_the_car_goes_back_as_the_car_sent_it.py
+    UNREADABLE=(None,True,False,'1',1.0,'')
+
     def test_every_flag_and_value_is_named(self):
         for key in ('chargeEnable','circulation','recharge'):
-            for value in (2,-1,None,True,False,'1',1.0,''):
+            values=(2,-1)+self.UNREADABLE if key=='chargeEnable' else self.UNREADABLE
+            for value in values:
                 message=self.refusal(**{key:value})
                 self.assertIn(key,message,(key,value))
                 self.assertIn(repr(value),message,(key,value))
 
     def test_two_different_faults_do_not_read_the_same(self):
-        self.assertNotEqual(self.refusal(circulation=2),self.refusal(recharge=2))
-        self.assertNotEqual(self.refusal(circulation=2),self.refusal(circulation=None))
+        self.assertNotEqual(self.refusal(circulation=None),self.refusal(recharge=None))
+        self.assertNotEqual(self.refusal(circulation=None),self.refusal(circulation=''))
 
     def test_a_day_mask_with_no_days_keeps_its_own_words(self):
         self.assertIn('day',self.refusal(cycles='0,0,0,0,0,0,0'))
