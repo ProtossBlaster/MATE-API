@@ -3,8 +3,8 @@
 [Italiano](README.it.md)
 
 Independent, unofficial Python client for the **Leapmotor cloud APIs**, with
-support for **V3 commands**. It was developed to migrate Mate away from the
-previous `leapmotor_api` SDK.
+support for **V3 commands**. It was developed to move Mate off the
+third-party SDK it used before.
 
 **Version: `0.1.0a9` · Status: alpha · Python: 3.11–3.14**
 

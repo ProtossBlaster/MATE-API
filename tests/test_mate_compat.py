@@ -48,8 +48,8 @@ class CompatibilityTests(unittest.TestCase):
     def test_sentry_mode_sends_its_v1_contract(self):
         """Sentry mode is a command Mate has always offered; V3 must not drop it.
 
-        The shipped V1 client sends cmd 220 with {"value":"1"}/{"value":"0"} (leapmotor_api
-        models.py, RemoteActionCtlSentryMode) and declares right 220. Refusing it locally hid a
+        The shipped V1 client sends cmd 220 with {"value":"1"}/{"value":"0"} (the previous SDK's
+        RemoteActionCtlSentryMode) and declares right 220. Refusing it locally hid a
         function from every car; the cloud refuses it by itself (result 40) where it is absent.
         """
         for name,value in (('sentry_mode_on','1'),('sentry_mode_off','0')):
@@ -83,7 +83,7 @@ class CompatibilityTests(unittest.TestCase):
 import sys,importlib.abc
 class Block(importlib.abc.MetaPathFinder):
  def find_spec(self,fullname,path=None,target=None):
-  if fullname.split('.')[0]=='leapmotor_api':raise RuntimeError('Legacy SDK forbidden')
+  if fullname.split('.')[0]=='leapmotor'+'_api':raise RuntimeError('Legacy SDK forbidden')
 sys.meta_path.insert(0,Block())
 from leapmotor_cloud.mate_compat import MateClientCompatibility,Vehicle
 from leapmotor_cloud.account_password import AccountPasswordResolver

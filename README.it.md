@@ -3,7 +3,7 @@
 [English](README.md)
 
 Client Python indipendente e non ufficiale per le **API cloud di Leapmotor**, con supporto ai **comandi V3**,
-sviluppato per la migrazione di Mate dal precedente SDK `leapmotor_api`.
+sviluppato per togliere a Mate l'SDK di terze parti che usava prima.
 
 **Versione: `0.1.0a9` · Stato: alpha · Python: 3.11–3.14**
 

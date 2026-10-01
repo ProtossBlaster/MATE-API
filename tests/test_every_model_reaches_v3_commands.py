@@ -143,7 +143,7 @@ class SentinelTests(unittest.TestCase):
     """Sentry mode is a V1 command Mate has always offered; V3 must not drop it.
 
     Its V1 contract is not guesswork: the shipped client sends cmd 220 with
-    `{"value":"1"}`/`{"value":"0"}` and declares right 220 (leapmotor_api models.py,
+    `{"value":"1"}`/`{"value":"0"}` and declares right 220 (the previous SDK's
     VehicleRight.SENTRY_MODE = 220) — the same right Mate's own capability profile records.
     No ability code for it was ever identified in the app, so the account right, the control
     module and the cloud's own refusal are what gate it. Command 400 stays unavailable: the

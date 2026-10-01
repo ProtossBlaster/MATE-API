@@ -7,8 +7,8 @@ provided. Publishing this package does not provision application credentials.
 
 ## Current boundary
 
-The `leapmotor_cloud` package is independent of Mate and the legacy
-`leapmotor_api` SDK. It provides signing, verified TLS transport, caller-supplied
+The `leapmotor_cloud` package is independent of Mate and of the
+third-party SDK Mate used before it. It provides signing, verified TLS transport, caller-supplied
 sessions, cloud reads/history, capability models, telemetry interpretation,
 certificate lifecycle primitives and explicit command execution primitives.
 

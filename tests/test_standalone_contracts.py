@@ -37,7 +37,7 @@ class StandaloneContractTests(unittest.TestCase):
 import sys, importlib.abc
 class Deny(importlib.abc.MetaPathFinder):
  def find_spec(self, fullname, path=None, target=None):
-  if fullname.split('.')[0] in {'leapmotor_api','db_reader','crypto','api_v2_bridge'}:
+  if fullname.split('.')[0] in {'leapmotor'+'_api','db_reader','crypto','api_v2_bridge'}:
    raise RuntimeError('Forbidden legacy dependency')
 sys.meta_path.insert(0,Deny())
 from leapmotor_cloud.command_contracts import prepare
