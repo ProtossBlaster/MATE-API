@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0a15 — 2026-10-03
+
+**Un trasporto che fallisce dice perché.** Ogni errore di rete, di DNS o di TLS usciva con la stessa
+frase, `Cloud transport failed`, e un accesso fallito prima della risposta diceva solo
+`stage=transport`. Un'installazione il cui Home Assistant non risolveva il nome del cloud ne ha
+scritte 9.049 in due settimane (leapmotor-mate #381, poi #384): la causa, il DNS, si vedeva solo nel
+vecchio messaggio della libreria precedente. Adesso `TransportError.reason` porta una parola da un
+vocabolario fisso — `dns_failure`, `timeout`, `connection_refused`, `connection_reset`,
+`network_unreachable`, `certificate_rejected`, `tls_failure`, `http_protocol`, `invalid_response`,
+più `redirect_refused` e `response_too_large` che c'erano già — e il messaggio la ripete:
+`Cloud transport failed: dns_failure`. Nessun nome di host, indirizzo o testo del sistema esce dal
+trasporto. `LoginUnavailable.reason` porta la stessa parola quando lo stadio è `transport`, e
+`None` altrimenti. `transport.REASONS` è il vocabolario.
+
 ## 0.1.0a14 — 2026-09-30
 
 **Un flag di ricarica letto dall'auto torna all'auto com'era.** Il comando 190 rimanda tutto il
