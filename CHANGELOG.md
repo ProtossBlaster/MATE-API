@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0a16 — 2026-10-06
+
+**I finestrini della T03 passano col loro codice.** Il comando 230 chiedeva l'abilità 12, e una T03
+europea dichiara la 36 e non la 12: due pacchetti diagnostici, la stessa lista. Ogni comando dei
+finestrini finiva in `Command not sent: ability_absent for 230` (leapmotor-mate #400), mentre la
+stessa auto aveva mandato il 230 con 4, 11, 66, 99, 72 e 100 prima che il controllo esistesse,
+ogni volta con risposta codice 0 dal cloud. La libreria precedente nominava già i due codici, 12 `WINDOWS_C10` e 36
+`WINDOWS_T03`, e qui era stato copiato solo il primo. Adesso un'abilità in `COMMAND_RULES` può
+essere una tupla, e basta una delle due; `evaluate()` accetta la stessa tupla. Anche l'intervallo
+segue il codice dichiarato: con la 36 il valore va da 0 a 100 (la scala della T03), altrimenti da 0
+a 10, la scala che Mate manda a B10, C10 e B05. Un'auto che non dichiara né la 12 né la 36 resta rifiutata.
+
+**Una cartella che non tiene i permessi non ferma più l'avvio.** Su un disco che non tiene i
+permessi — un disco FAT, misurato, e può esserlo la cartella condivisa di un NAS che ci proietta
+sopra i suoi ACL — una cartella creata 0700 si rilegge 0777 e `chmod` non lo cambia. Dalla 4.0.0
+Mate si fermava all'avvio con `Private directory permissions required` (leapmotor-mate #401, un
+Synology: lì non è ancora provato). Quando i bit risultano aperti, una
+prova creata privata da `tempfile` nella stessa cartella dice se quel disco tiene i permessi: se li
+tiene la cartella resta rifiutata come prima, se non li tiene si va avanti e il log lo scrive una
+volta per processo, perché lì chi legge la cartella lo decidono i permessi della cartella stessa.
+Una prova che non si riesce a creare non dimostra niente e vale come rifiuto.
+
+**Un test che girava solo sul Mac.** Il caso `network_unreachable` usava il numero 51, che è
+`ENETUNREACH` su macOS e non su Linux, dove vale 101: la CI era rossa dalla 0.1.0a15. Adesso usa
+`errno.ENETUNREACH`. Il codice era giusto.
+
 ## 0.1.0a15 — 2026-10-03
 
 **Un trasporto che fallisce dice perché.** Ogni errore di rete, di DNS o di TLS usciva con la stessa

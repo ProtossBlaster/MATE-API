@@ -22,6 +22,10 @@ refusal are its only gate; its actuation is unverified on every model. ID 400 st
 disabled by the examined official-app availability path. ID 193 is not authorized on
 the shared B10 account examined in the lab.
 
+An ability may be a tuple, any one of which is enough: the windows (230) are 12 on a B10 and 36
+on a European T03, and the window position is bounded 0..100 when the car declares 36 and 0..10
+otherwise. The caller still converts a percentage into the car's own scale.
+
 Ability codes are documentation, and `ABILITY_NOT_GATED` names the ones that are not a usable
 gate because a model was measured to under-declare them: climate (170/171), because the European
 T03 omits AC_ON (6) and cools anyway (Mate #67). An id joins that set only with a measurement.

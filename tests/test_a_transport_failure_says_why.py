@@ -8,6 +8,7 @@ list, with no host, address or free text from the system: `dns_failure`, `timeou
 `tls_failure`, `http_protocol`, `invalid_response`, and the two it already named, `redirect_refused`
 and `response_too_large`. A sign-in that failed in transport carries the same word.
 """
+import errno
 import socket
 import ssl
 import unittest
@@ -39,7 +40,7 @@ class TransportFailuresAreNamed(unittest.TestCase):
         (urllib.error.URLError(TimeoutError()), "timeout"),
         (ConnectionRefusedError(61, "Connection refused"), "connection_refused"),
         (ConnectionResetError(54, "Connection reset by peer"), "connection_reset"),
-        (OSError(51, "Network is unreachable"), "network_unreachable"),
+        (OSError(errno.ENETUNREACH, "Network is unreachable"), "network_unreachable"),
         (ssl.SSLCertVerificationError(1, "certificate verify failed"), "certificate_rejected"),
         (ssl.SSLError(1, "handshake failure"), "tls_failure"),
         (urllib.error.URLError(ssl.SSLError(1, "wrong version number")), "tls_failure"),
