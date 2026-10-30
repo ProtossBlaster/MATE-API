@@ -50,16 +50,21 @@ def fail(message):
     raise CommandContractError('Command not sent: '+message)
 
 
+def _positive(value):
+    """A positive whole number as a car's cloud entry writes it, a number or its decimal text; None otherwise."""
+    if type(value) is int:return value if value>0 else None
+    if not (isinstance(value,str) and value.isascii() and value.isdecimal()):return None
+    try:number=int(value)
+    except ValueError:return None   # more digits than int() reads (sys.get_int_max_str_digits)
+    return number if number>0 else None
+
+
 def _declared(vehicle,codes):
     """Whether the car's own cloud entry declares any of `codes`; an unreadable list declares none."""
     raw=getattr(vehicle,'raw',{}).get('abilities')
     if not isinstance(raw,list):return any(vehicle.has_ability(code) for code in codes)
-    try:
-        if any(not (type(v) is int and v>0 or isinstance(v,str) and v.isascii() and v.isdecimal() and int(v)>0) for v in raw):
-            raise ValueError()
-        declared={int(v) for v in raw}
-    except (ValueError,TypeError):return False
-    return any(code in declared for code in codes)
+    declared={_positive(v) for v in raw}
+    return None not in declared and any(code in declared for code in codes)
 
 
 def require(vehicle,cmd,ability=None):
