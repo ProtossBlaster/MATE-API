@@ -27,8 +27,9 @@ on a European T03, and the window position is bounded 0..100 when the car declar
 otherwise. The caller still converts a percentage into the car's own scale.
 
 The climate's fan level (170, 171, 360, 361) is 1..7 on every car, and up to the top a car declares in its
-`funcConfig` (`HVAC.fan.max`, with `valid: true`) when that is higher: a B10 lists 1..9. `fan_top(func_config)`
-returns that top, for a caller that bounds its own fan control by it.
+`funcConfig` (`HVAC.fan.max`, with `valid: true`) when that is higher, up to 9 (`FAN_TOP_MEASURED`): a B10
+lists 1..9 and takes 8 and 9. `fan_top(func_config)` returns that top, for a caller that bounds its own fan
+control by it.
 
 Ability codes are documentation, and `ABILITY_NOT_GATED` names the ones that are not a usable
 gate because a model was measured to under-declare them: climate (170/171), because the European
