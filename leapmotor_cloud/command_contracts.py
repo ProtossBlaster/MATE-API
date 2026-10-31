@@ -111,13 +111,18 @@ def text(value,limit=512):
         fail('invalid text field')
 
 
+# The most fan speeds a car has been measured to take from the cloud; a higher declared top is not sent.
+FAN_TOP_MEASURED=9
+
+
 def fan_top(func_config):
     """The highest fan level a climate command may carry for a car with this `funcConfig`: 7, or the top
-    the car declares when it is higher. 1..7 stays open to every car, as the fixed bodies in `mate_compat` send 7."""
+    the car declares when it is higher, up to `FAN_TOP_MEASURED`. 1..7 stays open to every car, as the
+    fixed bodies in `mate_compat` send 7."""
     hvac=func_config.get('HVAC') if isinstance(func_config,dict) and func_config.get('valid') is True else None
     fan=hvac.get('fan') if isinstance(hvac,dict) else None
     low,high=(_positive(fan.get('min')),_positive(fan.get('max'))) if isinstance(fan,dict) else (None,None)
-    return max(7,high) if low and high and low<=high else 7
+    return min(max(7,high),FAN_TOP_MEASURED) if low and high and low<=high else 7
 
 
 def air(state,vehicle):

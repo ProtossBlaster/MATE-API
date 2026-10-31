@@ -3,10 +3,10 @@
 The vehicle list gives each car a `funcConfig` with the range of its remote climate, the fan's in gears:
 `{"HVAC": {"fan": {"max": "9", "min": "1", "unit": "gear"}, ...}, "valid": true}`. A B10 lists 1-9 and
 its fan reads 9 on the car; a B05 has nine speeds since a software update. The climate contract took
-1-7 from every car, so 8 and 9 could not be sent. A higher declared top now opens them, and 1-7 stays
-open to every car, because the fixed climate bodies send 7 to all of them.
+1-7 from every car, so 8 and 9 could not be sent. A higher declared top now opens them, up to nine, the
+most a car has been measured to take; 1-7 stays open to every car, because the fixed climate bodies send 7
+to all of them.
 """
-import tracemalloc
 import unittest
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -74,15 +74,12 @@ class DeclaredFanSpeedsTests(unittest.TestCase):
             with self.subTest(level=level):
                 with self.assertRaises(ValidationError):prepare('170', climate(level), car(B10))
 
-    def test_a_huge_declared_top_is_compared_not_listed(self):
-        tracemalloc.start()
-        try:
-            self.assertEqual(prepare('170', climate('1'), car(fan(max='1000000')))['windlevel'], '1')
-            with self.assertRaises(ValidationError):prepare('170', climate('1000001'), car(fan(max='1000000')))
-            peak = tracemalloc.get_traced_memory()[1]
-        finally:
-            tracemalloc.stop()
-        self.assertLess(peak, 1_000_000)
+    def test_a_declared_top_above_nine_stops_at_nine(self):
+        for top in ('10', '1000000'):
+            with self.subTest(top=top):
+                self.assertEqual(fan_top(fan(max=top)), 9)
+                self.assertEqual(prepare('170', climate('9'), car(fan(max=top)))['windlevel'], '9')
+                with self.assertRaises(ValidationError):prepare('170', climate('10'), car(fan(max=top)))
 
 
 if __name__ == '__main__':
